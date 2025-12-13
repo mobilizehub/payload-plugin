@@ -1,8 +1,8 @@
+import { mobilizehubPlugin } from '@mobilizehub/payload-plugin'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { payloadPlugin } from 'payload-plugin'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -25,10 +25,6 @@ const buildConfigWithMemoryDB = async () => {
     },
     collections: [
       {
-        slug: 'posts',
-        fields: [],
-      },
-      {
         slug: 'media',
         fields: [],
         upload: {
@@ -46,13 +42,7 @@ const buildConfigWithMemoryDB = async () => {
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [
-      payloadPlugin({
-        collections: {
-          posts: true,
-        },
-      }),
-    ],
+    plugins: [mobilizehubPlugin({})],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {

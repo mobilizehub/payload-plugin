@@ -1,7 +1,7 @@
 {
   "name": "@mobilizehub/payload-plugin",
   "version": "0.0.1",
-  "description": "An advocacy plugin for Payload 3.0",
+  "description": "Edvocacy plugin for Payload",
   "license": "MIT",
   "private": false,
   "type": "module",
@@ -36,9 +36,11 @@
     "dev": "next dev dev --turbo",
     "dev:generate-importmap": "pnpm dev:payload generate:importmap",
     "dev:generate-types": "pnpm dev:payload generate:types",
+    "dev:generate": "pnpm dev:generate-importmap && pnpm dev:generate-types",
     "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload",
     "generate:importmap": "pnpm dev:generate-importmap",
     "generate:types": "pnpm dev:generate-types",
+    "generate": "pnpm generate:importmap && pnpm generate:types",
     "lint": "eslint",
     "lint:fix": "eslint ./src --fix",
     "test": "pnpm test:int && pnpm test:e2e",
@@ -117,5 +119,8 @@
       "unrs-resolver"
     ]
   },
-  "registry": "https://registry.npmjs.org/"
+  "registry": "https://registry.npmjs.org/",
+  "dependencies": {
+    "i18n-iso-countries": "^7.14.0"
+  }
 }
