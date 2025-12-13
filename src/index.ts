@@ -1,8 +1,11 @@
 import type { Config } from 'payload'
 
-export type MobilizehubPluginConfig = {
-  disabled?: boolean
-}
+import type { MobilizehubPluginConfig } from './types/index.js'
+
+import { generateContactsCollection } from './collections/contacts/generateContactsCollection.js'
+import { generateTagsCollection } from './collections/tags/generateTagsCollection.js'
+
+export * from './types/index.js'
 
 export const mobilizehubPlugin =
   (pluginOptions: MobilizehubPluginConfig) =>
@@ -10,6 +13,11 @@ export const mobilizehubPlugin =
     if (!config.collections) {
       config.collections = []
     }
+
+    config.collections.push(
+      generateTagsCollection(pluginOptions),
+      generateContactsCollection(pluginOptions),
+    )
 
     if (pluginOptions.disabled) {
       return config
