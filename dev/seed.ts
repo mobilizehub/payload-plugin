@@ -32,12 +32,68 @@ async function seedContact(payload: Payload) {
     for (const contact of contacts) {
       await payload.create({
         collection: 'contacts',
-        data: contact,
+        data: { ...contact, emailOptIn: true },
       })
     }
   }
 }
+
+async function seedBroadcast(payload: Payload) {
+  const { totalDocs } = await payload.count({
+    collection: 'broadcasts',
+  })
+  if (!totalDocs) {
+    await payload.create({
+      collection: 'broadcasts',
+      data: {
+        id: 1,
+        name: 'Newsletter #1',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    detail: 0,
+                    format: 0,
+                    mode: 'normal',
+                    style: '',
+                    text: 'Welcome to our newsletter',
+                    version: 1,
+                  },
+                ],
+                direction: null,
+                format: '',
+                indent: 0,
+                textFormat: 0,
+                textStyle: '',
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        fromAddress: 'dev@payloadcms.com',
+        fromName: 'Dev',
+        previewText: null,
+        replyTo: null,
+        status: 'draft',
+        subject: 'Welcome to our newsletter',
+        tags: [],
+        to: 'all',
+      },
+    })
+  }
+}
+
 export const seed = async (payload: Payload) => {
   await seedUser(payload)
   await seedContact(payload)
+  await seedBroadcast(payload)
 }
