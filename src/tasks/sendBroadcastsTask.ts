@@ -4,6 +4,9 @@ import z from 'zod'
 
 import type { MobilizehubPluginConfig } from '../types/index.js'
 
+/**
+ * Schema for validating broadcast documents before processing.
+ */
 const BroadcastSchema = z.object({
   id: z.number(),
   content: z.any().refine((val) => val !== undefined && val !== null, {
@@ -21,10 +24,11 @@ const BroadcastSchema = z.object({
   to: z.literal('all').or(z.literal('tags')),
 })
 
+type ParsedBroadcast = z.infer<typeof BroadcastSchema>
+
 /**
- * Validates a broadcast before sending
- * @param broadcast - The broadcast document to validate
- * @returns An object indicating whether the broadcast is valid and any error codes/messages
+ * Validates a broadcast document against the schema.
+ * Returns typed data on success, or flattened field errors on failure.
  */
 function safeParseBroadcast(broadcast: unknown) {
   const result = BroadcastSchema.safeParse(broadcast)
@@ -32,7 +36,7 @@ function safeParseBroadcast(broadcast: unknown) {
   if (!result.success) {
     return {
       data: null,
-      message: z.flattenError(result.error).fieldErrors,
+      errors: z.flattenError(result.error).fieldErrors,
       success: false as const,
     }
   }
@@ -44,165 +48,141 @@ function safeParseBroadcast(broadcast: unknown) {
 }
 
 /**
- * Creates a task configuration for sending broadcasts.
- * This task is called on a schedule to find broadcasts with the status "sending"
- * and processes a batch of emails by adding them to the send-email-queue.
+ * Builds the where clause for fetching the next batch of contacts.
+ * Uses cursor-based pagination (id > lastProcessedContactId) for consistent
+ * ordering and efficient queries at scale.
+ */
+function buildContactsWhereClause(
+  broadcast: ParsedBroadcast,
+  rawBroadcast: Record<string, unknown>,
+): Where {
+  const conditions: Where[] = [
+    { emailOptIn: { equals: true } },
+    { id: { greater_than: broadcast.meta.lastProcessedContactId } },
+  ]
+
+  // Tags may be populated objects or raw IDs depending on query depth
+  if (broadcast.to === 'tags' && Array.isArray(rawBroadcast.tags) && rawBroadcast.tags.length > 0) {
+    const tagIds = rawBroadcast.tags.map((t: { id: number | string } | number | string) =>
+      typeof t === 'object' ? t.id : t,
+    )
+    conditions.push({ tags: { in: tagIds } })
+  }
+
+  return { and: conditions }
+}
+
+/**
+ * Extracts a numeric ID from a contact, handling string IDs from some database adapters.
+ */
+function getLastContactId(contact: { id: number | string }): number {
+  return typeof contact.id === 'number' ? contact.id : parseInt(contact.id, 10)
+}
+
+/**
+ * Creates the send-broadcasts scheduled task.
  *
- * @param pluginConfig - The Mobilizehub plugin configuration
- * @returns A Payload TaskConfig object for the send-broadcast task
+ * Processes broadcasts by polling for documents with status 'sending' and
+ * queuing batches of send-email jobs. Each invocation processes one broadcast
+ * and one batch of contacts, allowing the task to be distributed across
+ * multiple schedule intervals.
  */
 export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig): TaskConfig => {
-  const config: TaskConfig = {
+  const BATCH_SIZE = pluginConfig.broadcastConfig?.batchSize || 100
+  const TASK_SCHEDULE = pluginConfig.broadcastConfig?.taskSchedule || '*/5 * * * *'
+  const QUEUE_NAME = pluginConfig.broadcastConfig?.broadcastQueueName || 'send-broadcasts'
+
+  return {
     slug: 'send-broadcasts',
     handler: async ({ req }) => {
-      try {
-        req.payload.logger.info('Send Broadcast task handler called')
+      const { payload } = req
+      const logger = payload.logger
 
-        // Get the first broadcast with status "sending"
-        const documents = await req.payload.find({
-          collection: 'broadcasts',
-          limit: 1,
-          // Get the oldest broadcast first
-          sort: 'id',
-          where: {
-            status: {
-              equals: 'sending',
-            },
-          },
-        })
+      logger.info('Send Broadcast task handler called')
 
-        const broadcast = documents?.docs?.[0]
+      // Process broadcasts in order of creation (oldest first)
+      const { docs } = await payload.find({
+        collection: 'broadcasts',
+        limit: 1,
+        sort: 'id',
+        where: { status: { equals: 'sending' } },
+      })
 
-        if (!broadcast) {
-          req.payload.logger.info('No broadcasts with status "sending" found.')
-          return {
-            output: {
-              success: true,
-            },
-          }
-        }
+      const rawBroadcast = docs[0]
 
-        const parsedBroadcast = safeParseBroadcast(broadcast)
-
-        if (!parsedBroadcast.success) {
-          req.payload.logger.error(parsedBroadcast, `Broadcast ${broadcast.id} validation failed`)
-          throw new Error()
-        }
-
-        // Check if we've already processed all contacts
-        if (parsedBroadcast.data.meta.processedCount >= parsedBroadcast.data.meta.contactsCount) {
-          req.payload.logger.info(
-            `All ${parsedBroadcast.data.meta.contactsCount} contacts have been processed for broadcast ID: ${broadcast.id}. Marking as sent.`,
-          )
-          // Update broadcast status to 'sent'
-          await req.payload.update({
-            id: parsedBroadcast.data.id,
-            collection: 'broadcasts',
-            data: {
-              status: 'sent',
-            },
-          })
-          return {
-            output: {
-              success: true,
-            },
-          }
-        }
-
-        // Build the where clause for fetching contacts using cursor-based pagination
-        const whereClause: Where = {
-          and: [
-            { emailOptIn: { equals: true } },
-            // Cursor-based pagination: only fetch contacts with ID greater than last processed
-            { id: { greater_than: parsedBroadcast.data.meta.lastProcessedContactId } },
-          ],
-        }
-
-        /**
-         * If the broadcast is targeted by tags, add a tags filter to the where clause
-         */
-        if (broadcast.to === 'tags' && broadcast.tags?.length) {
-          const tagIds = broadcast.tags.map((t: { id: number | string } | number | string) =>
-            typeof t === 'object' ? t.id : t,
-          )
-          // Add tags filter to where clause
-          ;(whereClause.and as Where[]).push({ tags: { in: tagIds } })
-        }
-
-        /**
-         * Batch size for processing emails in the send broadcasts task.
-         * Configurable via pluginConfig.broadcastsBatchSize, defaults to 100.
-         */
-        const BATCH_SIZE = pluginConfig.broadcastsBatchSize || 100
-
-        // Fetch a batch of contacts using cursor-based pagination (no offset needed)
-        const { docs: contacts } = await req.payload.find({
-          collection: 'contacts',
-          limit: BATCH_SIZE,
-          sort: 'id', // Ensure consistent ordering for cursor pagination
-          where: whereClause,
-        })
-
-        if (contacts.length === 0) {
-          req.payload.logger.info(
-            `No more contacts to process for broadcast ID: ${broadcast.id}. Marking as sent.`,
-          )
-          // Update broadcast status to 'sent' when all contacts have been processed
-          await req.payload.update({
-            id: parsedBroadcast.data.id,
-            collection: 'broadcasts',
-            data: {
-              status: 'sent',
-            },
-          })
-
-          return {
-            output: {
-              success: true,
-            },
-          }
-        }
-
-        // Queue send-email tasks for each contact in parallel
-        await Promise.all(
-          contacts.map((contact) =>
-            req.payload.jobs.queue({
-              input: {
-                broadcastId: parsedBroadcast.data.id,
-                contactId: contact.id,
-              },
-              queue: 'send-emails',
-              task: 'send-email',
-            }),
-          ),
-        )
-
-        // Update the processed count and cursor position on the broadcast
-        const newProcessedCount = parsedBroadcast.data.meta.processedCount + contacts.length
-        const lastContact = contacts[contacts.length - 1]
-        const lastProcessedContactId =
-          typeof lastContact.id === 'number' ? lastContact.id : parseInt(lastContact.id)
-
-        await req.payload.update({
-          id: parsedBroadcast.data.id,
-          collection: 'broadcasts',
-          data: {
-            meta: {
-              lastProcessedContactId,
-              processedCount: newProcessedCount,
-            },
-          },
-        })
-
-        return {
-          output: {
-            success: true,
-          },
-        }
-      } catch (error) {
-        req.payload.logger.error(error, 'Error in Send Broadcast task handler:')
-        throw error
+      if (!rawBroadcast) {
+        logger.info('No broadcasts with status "sending" found')
+        return { output: { success: true } }
       }
+
+      const parsed = safeParseBroadcast(rawBroadcast)
+
+      if (!parsed.success) {
+        logger.error({ errors: parsed.errors }, `Broadcast ${rawBroadcast.id} validation failed`)
+        await payload.update({
+          id: rawBroadcast.id,
+          collection: 'broadcasts',
+          data: { status: 'failed' },
+        })
+        return { output: { success: false } }
+      }
+
+      const broadcast = parsed.data
+      const whereClause = buildContactsWhereClause(
+        broadcast,
+        rawBroadcast as Record<string, unknown>,
+      )
+
+      const { docs: contacts } = await payload.find({
+        collection: 'contacts',
+        limit: BATCH_SIZE,
+        sort: 'id',
+        where: whereClause,
+      })
+
+      // No remaining contacts indicates broadcast is complete
+      if (contacts.length === 0) {
+        logger.info(
+          `Broadcast ${broadcast.id} complete. ` +
+            `Processed: ${broadcast.meta.processedCount}, Expected: ${broadcast.meta.contactsCount}`,
+        )
+        await payload.update({
+          id: broadcast.id,
+          collection: 'broadcasts',
+          data: { status: 'sent' },
+        })
+        return { output: { success: true } }
+      }
+
+      // Queue individual email jobs (send-email task handles delivery and idempotency)
+      await Promise.all(
+        contacts.map((contact) =>
+          payload.jobs.queue({
+            input: { broadcastId: broadcast.id, contactId: contact.id },
+            queue: 'send-emails',
+            task: 'send-email',
+          }),
+        ),
+      )
+
+      // Advance cursor for next batch
+      await payload.update({
+        id: broadcast.id,
+        collection: 'broadcasts',
+        data: {
+          meta: {
+            lastProcessedContactId: getLastContactId(contacts[contacts.length - 1]),
+            processedCount: broadcast.meta.processedCount + contacts.length,
+          },
+        },
+      })
+
+      logger.info(
+        `Broadcast ${broadcast.id}: queued ${contacts.length} emails, ` +
+          `total processed: ${broadcast.meta.processedCount + contacts.length}`,
+      )
+
+      return { output: { success: true } }
     },
     outputSchema: [
       {
@@ -213,11 +193,9 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
     retries: 3,
     schedule: [
       {
-        cron: pluginConfig.broadcastsTaskSchedule || '* * * * *', // Every minute
-        queue: 'send-broadcasts',
+        cron: TASK_SCHEDULE,
+        queue: QUEUE_NAME,
       },
     ],
   }
-
-  return config
 }

@@ -105,20 +105,35 @@ export type EmailAdapter = ({ payload }: { payload: BasePayload }) => {
 }
 
 export type MobilizehubPluginConfig = {
-  /**
-   * Batch size for processing contacts in the broadcasts task.
-   * Higher values process faster but use more memory.
-   * @default 100
-   */
-  broadcastsBatchSize?: number
+  broadcastConfig?: {
+    /**
+     * Batch size for processing contacts in the broadcasts task.
+     * Higher values process faster but use more memory.
+     * @default 100
+     */
+    batchSize?: number
+    /**
+     * Optional custom queue name for the broadcasts task
+     * @default 'send-broadcasts'
+     */
+    broadcastQueueName?: string
+    /**
+     * Optional custom queue name for the email sending task
+     * @default 'send-email'
+     */
+    emailQueueName?: string
+    /**
+     * Cron schedule for the broadcasts task
+     * On schedule the task will run to process and send pending broadcasts
+     * @default '5 * * * *' (every 5 minutes)
+     */
+    taskSchedule?: string
+  }
   /**
    * Overrides for the broadcasts collection
    */
   broadcastsOverrides?: CollectionOverride
-  /**
-   * Cron schedule for the broadcasts task
-   */
-  broadcastsTaskSchedule?: string
+
   /**
    * Overrides for the contacts collection
    */

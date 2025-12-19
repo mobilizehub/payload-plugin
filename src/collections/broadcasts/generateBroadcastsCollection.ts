@@ -24,6 +24,10 @@ export const generateBroadcastsCollection = (broadcastsConfig: MobilizehubPlugin
           value: 'sending',
         },
         {
+          label: "Failed",
+          value: 'failed',
+        },
+        {
           label: 'Sent',
           value: 'sent',
         },
