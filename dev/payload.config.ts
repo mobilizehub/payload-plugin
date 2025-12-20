@@ -6,6 +6,7 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { renderEmailTemplate } from './helpers/renderEmailTemplate.js'
 import { testEmailAdapter } from './helpers/testEmailAdapter.js'
 import { seed } from './seed.js'
 
@@ -37,12 +38,44 @@ const buildConfigWithMemoryDB = async () => {
         url: 'file:./payload.db',
       },
     }),
+    debug: true,
     editor: lexicalEditor(),
     email: testEmailAdapter,
+    jobs: {
+      autoRun: [
+        {
+          cron: '* * * * *',
+          queue: 'send-broadcasts',
+        },
+        {
+          cron: '* * * * *',
+          queue: 'send-emails',
+        },
+      ],
+    },
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [mobilizehubPlugin({})],
+    plugins: [
+      mobilizehubPlugin({
+        broadcastConfig: {
+          batchSize: 10,
+          taskSchedule: '* * * * *', // every minute
+        },
+        email: () => {
+          return {
+            name: 'test-email-adapter',
+            defaultFromAddress: 'dev@payloadcms.com',
+            defaultFromName: 'Dev',
+            render: renderEmailTemplate,
+            sendEmail: async (opts) => {
+              console.log('Sending email with test-email-adapter', opts)
+              return Promise.resolve()
+            },
+          }
+        },
+      }),
+    ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {
