@@ -74,6 +74,22 @@ const buildConfigWithMemoryDB = async () => {
             },
           }
         },
+        pagesOverrides: {
+          blocks: ({ defaultBlocks }) => [
+            ...defaultBlocks,
+            {
+              slug: 'hero',
+              fields: [
+                {
+                  name: 'headline',
+                  type: 'text',
+                  label: 'Headline',
+                },
+              ],
+              interfaceName: 'HeroBlock',
+            },
+          ],
+        },
       }),
     ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
