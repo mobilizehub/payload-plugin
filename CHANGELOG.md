@@ -1,5 +1,11 @@
 # @mobilizehub/payload-plugin
 
+## 0.3.2
+
+### Patch Changes
+
+- ac4c371: fix: add pages collection to plugin exports
+
 ## 0.3.1
 
 ### Patch Changes
