@@ -107,6 +107,9 @@ export type EmailAdapter = ({ payload }: { payload: BasePayload }) => {
 }
 
 export type MobilizehubPluginConfig = {
+  /**
+   * Broadcasts task configuration
+   */
   broadcastConfig?: {
     /**
      * Batch size for processing contacts in the broadcasts task.
@@ -135,7 +138,6 @@ export type MobilizehubPluginConfig = {
    * Overrides for the broadcasts collection
    */
   broadcastsOverrides?: CollectionOverride
-
   /**
    * Overrides for the contacts collection
    */
@@ -153,6 +155,14 @@ export type MobilizehubPluginConfig = {
    */
   emailsOverrides?: CollectionOverride
   /**
+   * Overrides for the forms collection
+   */
+  formsOverrides?: CollectionOverride
+  /**
+   * Overrides for the form submissions collection
+   */
+  formSubmissionsOverrides?: CollectionOverride
+  /**
    * Overrides for the pages collection
    */
   pagesOverrides?: { blocks?: BlocksOverride } & CollectionOverride
@@ -160,7 +170,4 @@ export type MobilizehubPluginConfig = {
    * Overrides for the tags collection
    */
   tagsOverrides?: CollectionOverride
-  /**
-   *
-   */
 }

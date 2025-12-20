@@ -11,6 +11,7 @@ A comprehensive email advocacy and contact management plugin for [Payload CMS](h
 
 - Contact database with tag-based segmentation and opt-in management
 - Email broadcast campaigns with draft-to-sent workflow and audience targeting
+- Forms and form submissions for collecting and managing user responses
 - Background task processing for scalable email delivery
 - Webhook integration for delivery status tracking (delivered, bounced, opened, clicked)
 - Secure unsubscribe tokens with HMAC-SHA256 signing

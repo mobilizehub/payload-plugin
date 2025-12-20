@@ -111,23 +111,20 @@ export const generateContactsCollection = (
           ],
           label: 'Location',
         },
-        /**
-         * @todo Enable form submissions relationship when form submissions collection is available.
-         */
-        // {
-        //   fields: [
-        //     {
-        //       name: 'formSubmissions',
-        //       type: 'join',
-        //       admin: {
-        //         description: 'Form submissions made by this contact',
-        //       },
-        //       collection: 'formSubmissions',
-        //       on: 'contact',
-        //     },
-        //   ],
-        //   label: 'Submissions',
-        // },
+        {
+          fields: [
+            {
+              name: 'formSubmissions',
+              type: 'join',
+              admin: {
+                description: 'Form submissions made by this contact',
+              },
+              collection: 'formSubmissions',
+              on: 'contact',
+            },
+          ],
+          label: 'Submissions',
+        },
         /**
          * @todo Enable transactions relationship when transactions collection is available.
          */
