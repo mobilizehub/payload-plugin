@@ -1,10 +1,12 @@
-import type { BasePayload, CollectionConfig, Field, PayloadRequest } from 'payload'
+import type { BasePayload, Block, CollectionConfig, Field, PayloadRequest } from 'payload'
 
 export type FieldsOverride = (args: { defaultFields: Field[] }) => Field[]
 
 export type CollectionOverride = { fields?: FieldsOverride } & Partial<
   Omit<CollectionConfig, 'fields'>
 >
+
+export type BlocksOverride = (args: { defaultBlocks: Block[] }) => Block[]
 
 /**
  * Contact type
@@ -151,7 +153,14 @@ export type MobilizehubPluginConfig = {
    */
   emailsOverrides?: CollectionOverride
   /**
+   * Overrides for the pages collection
+   */
+  pagesOverrides?: { blocks?: BlocksOverride } & CollectionOverride
+  /**
    * Overrides for the tags collection
    */
   tagsOverrides?: CollectionOverride
+  /**
+   *
+   */
 }
