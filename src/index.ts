@@ -5,6 +5,7 @@ import type { MobilizehubPluginConfig } from './types/index.js'
 import { generateBroadcastsCollection } from './collections/broadcasts/generateBroadcastsCollection.js'
 import { generateContactsCollection } from './collections/contacts/generateContactsCollection.js'
 import { generateEmailsCollection } from './collections/emails/generateEmailsCollection.js'
+import { generatePagesCollection } from './collections/pages/generatePagesCollection.js'
 import { generateTagsCollection } from './collections/tags/generateTagsCollection.js'
 import { generateUnsubscribeTokensCollection } from './collections/unsubscribe-tokens/generateUnsubscribeTokens.js'
 import { sendBroadcastHandler } from './endpoints/sendBroadcastHandler.js'
@@ -31,6 +32,7 @@ export const mobilizehubPlugin =
       generateContactsCollection(pluginOptions),
       generateBroadcastsCollection(pluginOptions),
       generateEmailsCollection(pluginOptions),
+      generatePagesCollection(pluginOptions),
       generateUnsubscribeTokensCollection(),
     )
 
