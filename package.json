@@ -1,6 +1,6 @@
 {
   "name": "@mobilizehub/payload-plugin",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Edvocacy plugin for Payload",
   "license": "MIT",
   "private": false,
