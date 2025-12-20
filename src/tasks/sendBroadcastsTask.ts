@@ -100,7 +100,6 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
 
       logger.info('Send Broadcast task handler called')
 
-      // Process broadcasts in order of creation (oldest first)
       const { docs } = await payload.find({
         collection: 'broadcasts',
         limit: 1,
@@ -140,7 +139,6 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
         where: whereClause,
       })
 
-      // No remaining contacts indicates broadcast is complete
       if (contacts.length === 0) {
         logger.info(
           `Broadcast ${broadcast.id} complete. ` +
@@ -154,7 +152,6 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
         return { output: { success: true } }
       }
 
-      // Queue individual email jobs (send-email task handles delivery and idempotency)
       await Promise.all(
         contacts.map((contact) =>
           payload.jobs.queue({
@@ -165,7 +162,6 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
         ),
       )
 
-      // Advance cursor for next batch
       await payload.update({
         id: broadcast.id,
         collection: 'broadcasts',

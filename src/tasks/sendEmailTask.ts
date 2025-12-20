@@ -104,7 +104,6 @@ export const createSendEmailTask = (pluginConfig: MobilizehubPluginConfig): Task
         token: unsubscribeToken,
       })
 
-      // Create record before sending so failures are trackable
       const email = await payload.create({
         collection: collections.emails,
         data: {

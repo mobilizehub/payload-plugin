@@ -1,4 +1,4 @@
-export const renderEmailTemplate = (args: { html: string; subject: string; token: string }) => {
+export const renderEmailTemplate = (args: any) => {
   return `
 <!DOCTYPE html>
 <html lang="en">

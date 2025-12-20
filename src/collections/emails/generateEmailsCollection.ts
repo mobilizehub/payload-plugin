@@ -64,6 +64,15 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
       },
       relationTo: emailsConfig.broadcastsOverrides?.slug || 'broadcasts',
     },
+    {
+      name: 'contact',
+      type: 'relationship',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+      },
+      relationTo: emailsConfig.contactsOverrides?.slug || 'contacts',
+    },
 
     {
       name: 'activityField',

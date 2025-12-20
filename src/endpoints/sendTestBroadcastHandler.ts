@@ -24,6 +24,9 @@ type ValidationResult =
   | { broadcastId: number; success: true; testEmail: string }
   | { code: string; error: string; success: false }
 
+/**
+ * Validates the request body contains valid broadcastId and testEmail fields.
+ */
 function validateRequestBody(body: SendTestEmailBody): ValidationResult {
   const { broadcastId, testEmail } = body
 
@@ -39,7 +42,6 @@ function validateRequestBody(body: SendTestEmailBody): ValidationResult {
     return { code: ErrorCodes.VALIDATION_ERROR, error: 'testEmail is required', success: false }
   }
 
-  // Basic email validation
   if (!testEmail.includes('@')) {
     return {
       code: ErrorCodes.VALIDATION_ERROR,
@@ -51,6 +53,9 @@ function validateRequestBody(body: SendTestEmailBody): ValidationResult {
   return { broadcastId, success: true, testEmail }
 }
 
+/**
+ * Validates that a broadcast has all required fields for sending.
+ */
 function validateBroadcastFields(
   broadcast: Broadcast,
 ): { code: string; error: string; success: false } | { success: true } {
@@ -89,6 +94,10 @@ function validateBroadcastFields(
   return { success: true }
 }
 
+/**
+ * Fetches a broadcast, renders its content, and sends a test email.
+ * Test emails do not include an unsubscribe token.
+ */
 async function sendTestEmail(
   req: PayloadRequest,
   broadcastId: number,
@@ -98,7 +107,6 @@ async function sendTestEmail(
   const { payload } = req
   const logger = payload.logger
 
-  // Fetch broadcast
   const broadcast = (await payload.findByID({
     id: broadcastId,
     collection: 'broadcasts',
@@ -109,23 +117,18 @@ async function sendTestEmail(
     return errorResponse(ErrorCodes.BROADCAST_NOT_FOUND, 'Broadcast not found', 404)
   }
 
-  // Validate broadcast fields
   const validation = validateBroadcastFields(broadcast)
   if (!validation.success) {
     logger.error(`Broadcast ${broadcastId}: ${validation.error}`)
     return errorResponse(validation.code, validation.error, 400)
   }
 
-  // Get email methods
   const { render, sendEmail } = emailConfig(req)
 
-  // Parse content
   const parsedContent = await parseLexicalContent(broadcast.content!, payload.config)
 
-  // Format from address
   const fromAddress = formatFromAddress(broadcast.fromName!, broadcast.fromAddress!)
 
-  // Render email HTML (no unsubscribe token for test emails)
   const html = render({
     from: fromAddress,
     html: parsedContent.html,
@@ -136,7 +139,6 @@ async function sendTestEmail(
     token: '',
   })
 
-  // Prepare email input
   const emailInput: Pick<EmailMessage, 'from' | 'html' | 'subject' | 'to'> = {
     from: fromAddress,
     html,
@@ -144,7 +146,6 @@ async function sendTestEmail(
     to: testEmail,
   }
 
-  // Send the email
   await sendEmail(emailInput)
 
   logger.info(`Test email sent to ${testEmail} for broadcast ${broadcastId}`)
@@ -152,10 +153,20 @@ async function sendTestEmail(
   return successResponse({ message: 'Test email sent successfully' }, 200)
 }
 
+/**
+ * Creates the send-test-email endpoint handler.
+ *
+ * Allows authenticated users to send a test email for a broadcast to a
+ * specified email address. Validates the broadcast exists and has all
+ * required fields before rendering and sending.
+ */
 export const sendTestEmailHandler = (
   config: Pick<MobilizehubPluginConfig, 'email'>,
 ): PayloadHandler => {
   return async (req) => {
+    const { payload } = req
+    const logger = payload.logger
+
     if (!req.json) {
       return errorResponse(ErrorCodes.BAD_REQUEST, 'No JSON body provided', 400)
     }
@@ -167,7 +178,6 @@ export const sendTestEmailHandler = (
     try {
       const body = (await req.json()) as SendTestEmailBody
 
-      // Validate request body
       const validation = validateRequestBody(body)
       if (!validation.success) {
         return errorResponse(validation.code, validation.error, 400)
@@ -175,7 +185,7 @@ export const sendTestEmailHandler = (
 
       return await sendTestEmail(req, validation.broadcastId, validation.testEmail, config.email)
     } catch (error) {
-      req.payload.logger.error(error as Error, 'Error sending test email')
+      logger.error(error as Error, 'Error sending test email')
       return errorResponse(ErrorCodes.INTERNAL_ERROR, 'Error sending test email', 500)
     }
   }

@@ -58,7 +58,10 @@ const buildConfigWithMemoryDB = async () => {
     },
     plugins: [
       mobilizehubPlugin({
-        broadcastsTaskSchedule: '* * * * *', // every minute
+        broadcastConfig: {
+          batchSize: 10,
+          taskSchedule: '* * * * *', // every minute
+        },
         email: () => {
           return {
             name: 'test-email-adapter',
