@@ -5,6 +5,8 @@ import type { MobilizehubPluginConfig } from './types/index.js'
 import { generateBroadcastsCollection } from './collections/broadcasts/generateBroadcastsCollection.js'
 import { generateContactsCollection } from './collections/contacts/generateContactsCollection.js'
 import { generateEmailsCollection } from './collections/emails/generateEmailsCollection.js'
+import { generateFormSubmissionsCollection } from './collections/form-submissions/generateFormSubmissionsCollection.js'
+import { generateFormsCollection } from './collections/forms/generateFormsCollection.js'
 import { generatePagesCollection } from './collections/pages/generatePagesCollection.js'
 import { generateTagsCollection } from './collections/tags/generateTagsCollection.js'
 import { generateUnsubscribeTokensCollection } from './collections/unsubscribe-tokens/generateUnsubscribeTokens.js'
@@ -19,10 +21,6 @@ export * from './types/index.js'
 export const mobilizehubPlugin =
   (pluginOptions: MobilizehubPluginConfig) =>
   (config: Config): Config => {
-    if (pluginOptions.disabled) {
-      return config
-    }
-
     if (!config.collections) {
       config.collections = []
     }
@@ -34,7 +32,13 @@ export const mobilizehubPlugin =
       generateEmailsCollection(pluginOptions),
       generatePagesCollection(pluginOptions),
       generateUnsubscribeTokensCollection(),
+      generateFormSubmissionsCollection(pluginOptions),
+      generateFormsCollection(pluginOptions),
     )
+
+    if (pluginOptions.disabled) {
+      return config
+    }
 
     if (!config.endpoints) {
       config.endpoints = []
