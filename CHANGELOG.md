@@ -1,5 +1,15 @@
 # @mobilizehub/payload-plugin
 
+## 0.4.0
+
+### Minor Changes
+
+- 6e8e428: Add forms and form submissions collections with contact integration
+  - Added forms collection for creating and managing forms
+  - Added form submissions collection to track form responses
+  - Enabled form submissions relationship field in contacts collection
+  - Added formsOverrides and formSubmissionsOverrides configuration options
+
 ## 0.3.2
 
 ### Patch Changes
