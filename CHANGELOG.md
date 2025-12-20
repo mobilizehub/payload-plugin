@@ -1,5 +1,11 @@
 # @mobilizehub/payload-plugin
 
+## 0.3.0
+
+### Minor Changes
+
+- 7681c6b: Add pages collection with customizable blocks and fields
+
 ## 0.2.0
 
 ### Minor Changes
