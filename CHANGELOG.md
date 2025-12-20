@@ -1,5 +1,11 @@
 # @mobilizehub/payload-plugin
 
+## 0.3.1
+
+### Patch Changes
+
+- a160cfb: Update README with comprehensive documentation including features, installation, development setup, and project details
+
 ## 0.3.0
 
 ### Minor Changes
