@@ -72,7 +72,10 @@ export interface Config {
     contacts: Contact;
     broadcasts: Broadcast;
     emails: Email;
+    pages: Page;
     emailUnsubscribeTokens: EmailUnsubscribeToken;
+    formSubmissions: FormSubmission;
+    forms: Form;
     'payload-kv': PayloadKv;
     users: User;
     'payload-jobs': PayloadJob;
@@ -81,8 +84,14 @@ export interface Config {
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    contacts: {
+      formSubmissions: 'formSubmissions';
+    };
     broadcasts: {
       emails: 'emails';
+    };
+    forms: {
+      formSubmissions: 'formSubmissions';
     };
   };
   collectionsSelect: {
@@ -91,7 +100,10 @@ export interface Config {
     contacts: ContactsSelect<false> | ContactsSelect<true>;
     broadcasts: BroadcastsSelect<false> | BroadcastsSelect<true>;
     emails: EmailsSelect<false> | EmailsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     emailUnsubscribeTokens: EmailUnsubscribeTokensSelect<false> | EmailUnsubscribeTokensSelect<true>;
+    formSubmissions: FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
+    forms: FormsSelect<false> | FormsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -116,7 +128,7 @@ export interface Config {
   jobs: {
     tasks: {
       'send-broadcasts': TaskSendBroadcasts;
-      'send-emails': TaskSendEmails;
+      'send-email': TaskSendEmail;
       inline: {
         input: unknown;
         output: unknown;
@@ -442,8 +454,264 @@ export interface Contact {
         | 'XK'
       )
     | null;
+  /**
+   * Form submissions made by this contact
+   */
+  formSubmissions?: {
+    docs?: (number | FormSubmission)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "formSubmissions".
+ */
+export interface FormSubmission {
+  id: number;
+  form: number | Form;
+  contact?: (number | null) | Contact;
+  createdAt: string;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forms".
+ */
+export interface Form {
+  id: number;
+  status?: ('draft' | 'published') | null;
+  name: string;
+  slug: string;
+  publishedAt?: string | null;
+  headline?: string | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  legend?: string | null;
+  /**
+   * Configure the fields to be included in the contact form.
+   */
+  contactFields?:
+    | (
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'email';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'emailOptIn';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'firstName';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'lastName';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mobileNumber';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mobileOptIn';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'address';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'city';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'state';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'zip';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'country';
+          }
+      )[]
+    | null;
+  submitButtonLabel?: string | null;
+  /**
+   * Choose whether to display an on-page message or redirect to a different page after they submit the form.
+   */
+  confirmationType?: ('message' | 'redirect') | null;
+  confirmationMessage?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  type?: ('reference' | 'custom') | null;
+  reference?:
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'forms';
+        value: number | Form;
+      } | null);
+  url?: string | null;
+  /**
+   * Tag all contacts submitted via this form with these tags.
+   */
+  tags?: (number | Tag)[] | null;
+  autoresponse: {
+    enabled?: boolean | null;
+    fromName: string;
+    /**
+     * The from address is set in the email configuration.
+     */
+    fromAddress: string;
+    replyTo?: string | null;
+    subject?: string | null;
+    previewText?: string | null;
+    content?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  formSubmissions?: {
+    docs?: (number | FormSubmission)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  status?: ('draft' | 'published') | null;
+  name: string;
+  slug: string;
+  publishedAt?: string | null;
+  blocks?: (ContentBlock | HeroBlock)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContentBlock".
+ */
+export interface ContentBlock {
+  richText?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  headline?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -451,7 +719,7 @@ export interface Contact {
  */
 export interface Broadcast {
   id: number;
-  status?: ('draft' | 'sending' | 'sent') | null;
+  status?: ('draft' | 'sending' | 'failed' | 'sent') | null;
   /**
    * This is for internal reference only.
    */
@@ -492,9 +760,13 @@ export interface Broadcast {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  _emailMeta?: {
-    expectedCount?: number | null;
+  meta?: {
+    contactsCount?: number | null;
     processedCount?: number | null;
+    /**
+     * Used for cursor-based pagination during batch processing
+     */
+    lastProcessedContactId?: number | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -508,6 +780,7 @@ export interface Email {
   providerId?: string | null;
   status: 'queued' | 'failed' | 'sent' | 'delivered' | 'bounced' | 'unsubscribed' | 'complained';
   broadcast?: (number | null) | Broadcast;
+  contact?: (number | null) | Contact;
   from: string;
   activity?:
     | {
@@ -626,7 +899,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'send-broadcasts' | 'send-emails';
+        taskSlug: 'inline' | 'send-broadcasts' | 'send-email';
         taskID: string;
         input?:
           | {
@@ -659,7 +932,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'send-broadcasts' | 'send-emails') | null;
+  taskSlug?: ('inline' | 'send-broadcasts' | 'send-email') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -703,8 +976,20 @@ export interface PayloadLockedDocument {
         value: number | Email;
       } | null)
     | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
         relationTo: 'emailUnsubscribeTokens';
         value: string | EmailUnsubscribeToken;
+      } | null)
+    | ({
+        relationTo: 'formSubmissions';
+        value: number | FormSubmission;
+      } | null)
+    | ({
+        relationTo: 'forms';
+        value: number | Form;
       } | null)
     | ({
         relationTo: 'users';
@@ -795,6 +1080,7 @@ export interface ContactsSelect<T extends boolean = true> {
   state?: T;
   zip?: T;
   country?: T;
+  formSubmissions?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -814,11 +1100,12 @@ export interface BroadcastsSelect<T extends boolean = true> {
   previewText?: T;
   content?: T;
   emails?: T;
-  _emailMeta?:
+  meta?:
     | T
     | {
-        expectedCount?: T;
+        contactsCount?: T;
         processedCount?: T;
+        lastProcessedContactId?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -831,6 +1118,7 @@ export interface EmailsSelect<T extends boolean = true> {
   providerId?: T;
   status?: T;
   broadcast?: T;
+  contact?: T;
   from?: T;
   activity?:
     | T
@@ -847,12 +1135,185 @@ export interface EmailsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  status?: T;
+  name?: T;
+  slug?: T;
+  publishedAt?: T;
+  blocks?:
+    | T
+    | {
+        content?: T | ContentBlockSelect<T>;
+        hero?: T | HeroBlockSelect<T>;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContentBlock_select".
+ */
+export interface ContentBlockSelect<T extends boolean = true> {
+  richText?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  headline?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "emailUnsubscribeTokens_select".
  */
 export interface EmailUnsubscribeTokensSelect<T extends boolean = true> {
   id?: T;
   emailId?: T;
   expiresAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "formSubmissions_select".
+ */
+export interface FormSubmissionsSelect<T extends boolean = true> {
+  form?: T;
+  contact?: T;
+  createdAt?: T;
+  data?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forms_select".
+ */
+export interface FormsSelect<T extends boolean = true> {
+  status?: T;
+  name?: T;
+  slug?: T;
+  publishedAt?: T;
+  headline?: T;
+  content?: T;
+  legend?: T;
+  contactFields?:
+    | T
+    | {
+        email?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        emailOptIn?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        firstName?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        lastName?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        mobileNumber?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        mobileOptIn?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        address?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        city?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        state?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        zip?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        country?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  submitButtonLabel?: T;
+  confirmationType?: T;
+  confirmationMessage?: T;
+  type?: T;
+  reference?: T;
+  url?: T;
+  tags?: T;
+  autoresponse?:
+    | T
+    | {
+        enabled?: T;
+        fromName?: T;
+        fromAddress?: T;
+        replyTo?: T;
+        subject?: T;
+        previewText?: T;
+        content?: T;
+      };
+  formSubmissions?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -990,12 +1451,12 @@ export interface TaskSendBroadcasts {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskSend-emails".
+ * via the `definition` "TaskSend-email".
  */
-export interface TaskSendEmails {
+export interface TaskSendEmail {
   input: {
-    contactId: string;
-    broadcastId: string;
+    contactId: number;
+    broadcastId: number;
   };
   output: {
     success?: boolean | null;

@@ -22,7 +22,7 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
         position: 'sidebar',
         readOnly: true,
       },
-      defaultValue: 'draft',
+      defaultValue: 'queued',
       options: [
         {
           label: 'Queued',
