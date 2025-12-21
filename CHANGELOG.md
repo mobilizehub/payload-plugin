@@ -1,5 +1,11 @@
 # @mobilizehub/payload-plugin
 
+## 0.4.1
+
+### Patch Changes
+
+- fa1ed3d: Fix email collection status field default value from 'draft' to 'queued' to match available options.
+
 ## 0.4.0
 
 ### Minor Changes
