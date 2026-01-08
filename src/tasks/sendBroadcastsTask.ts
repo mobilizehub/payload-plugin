@@ -90,7 +90,8 @@ function getLastContactId(contact: { id: number | string }): number {
 export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig): TaskConfig => {
   const BATCH_SIZE = pluginConfig.broadcastConfig?.batchSize || 100
   const TASK_SCHEDULE = pluginConfig.broadcastConfig?.taskSchedule || '*/5 * * * *'
-  const QUEUE_NAME = pluginConfig.broadcastConfig?.broadcastQueueName || 'send-broadcasts'
+  const BROADCAST_QUEUE_NAME = pluginConfig.broadcastConfig?.broadcastQueueName || 'send-broadcasts'
+  const EMAIL_QUEUE_NAME = pluginConfig.broadcastConfig?.emailQueueName || 'send-emails'
 
   return {
     slug: 'send-broadcasts',
@@ -156,7 +157,7 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
         contacts.map((contact) =>
           payload.jobs.queue({
             input: { broadcastId: broadcast.id, contactId: contact.id },
-            queue: 'send-emails',
+            queue: EMAIL_QUEUE_NAME,
             task: 'send-email',
           }),
         ),
@@ -190,7 +191,7 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
     schedule: [
       {
         cron: TASK_SCHEDULE,
-        queue: QUEUE_NAME,
+        queue: BROADCAST_QUEUE_NAME,
       },
     ],
   }
