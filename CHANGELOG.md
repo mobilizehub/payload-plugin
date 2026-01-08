@@ -1,5 +1,15 @@
 # @mobilizehub/payload-plugin
 
+## 0.5.0
+
+### Minor Changes
+
+- 4766c32: Add webhook endpoint for email providers at `/webhooks/email`. This endpoint receives webhook events from email providers (e.g., Resend) and delegates processing to the configured email adapter's webhookHandler.
+
+### Patch Changes
+
+- 9f71271: Fix emailQueueName config option not being used in sendBroadcastsTask
+
 ## 0.4.1
 
 ### Patch Changes
