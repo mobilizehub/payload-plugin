@@ -69,19 +69,31 @@ export const createContactFieldsConfig = (): Field => {
       },
     ],
     filterOptions: ({ siblingData }) => {
-      const blocks = (siblingData as any)?.contactFields as { blockType: string }[] | undefined
-      if (!blocks || blocks.length === 0) {
-        return CONTACT_FIELD_DEFINITIONS.map((def) => def.name)
-      }
-      const usedSlugs = blocks?.map((block) => block.blockType) || []
-      return CONTACT_FIELD_DEFINITIONS.map((def) => def.name).filter(
-        (slug) => !usedSlugs.includes(slug),
-      )
+      const allFieldNames = CONTACT_FIELD_DEFINITIONS.map((def) => def.name)
+      const existingBlocks =
+        (siblingData as { contactFields?: { blockType: string }[] })?.contactFields ?? []
+      const usedFieldNames = new Set(existingBlocks.map((block) => block.blockType))
+
+      return allFieldNames.filter((name) => !usedFieldNames.has(name))
     },
     label: 'Fields',
     labels: {
       plural: 'Fields',
       singular: 'Field',
+    },
+    validate: (value) => {
+      if (!value || !Array.isArray(value) || value.length === 0) {
+        return 'Email field is required'
+      }
+      const blockTypes = value.map((block: { blockType: string }) => block.blockType)
+      if (!blockTypes.includes('email')) {
+        return 'Email field is required'
+      }
+      const uniqueTypes = new Set(blockTypes)
+      if (blockTypes.length !== uniqueTypes.size) {
+        return 'Each contact field can only be added once'
+      }
+      return true
     },
   }
 }
