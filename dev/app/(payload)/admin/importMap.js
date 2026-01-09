@@ -26,6 +26,7 @@ import { SendBroadcastModal as SendBroadcastModal_ddfb106744f74e4f8b6aa32b3176ce
 import { SendTestBroadcastDrawer as SendTestBroadcastDrawer_ddfb106744f74e4f8b6aa32b3176cef6 } from '@mobilizehub/payload-plugin/client'
 import { EmailActivityField as EmailActivityField_ec282106275880eef4ed927ce0051fc7 } from '@mobilizehub/payload-plugin/rsc'
 import { EmailPreviewField as EmailPreviewField_ddfb106744f74e4f8b6aa32b3176cef6 } from '@mobilizehub/payload-plugin/client'
+import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 
 export const importMap = {
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -55,5 +56,6 @@ export const importMap = {
   "@mobilizehub/payload-plugin/client#SendBroadcastModal": SendBroadcastModal_ddfb106744f74e4f8b6aa32b3176cef6,
   "@mobilizehub/payload-plugin/client#SendTestBroadcastDrawer": SendTestBroadcastDrawer_ddfb106744f74e4f8b6aa32b3176cef6,
   "@mobilizehub/payload-plugin/rsc#EmailActivityField": EmailActivityField_ec282106275880eef4ed927ce0051fc7,
-  "@mobilizehub/payload-plugin/client#EmailPreviewField": EmailPreviewField_ddfb106744f74e4f8b6aa32b3176cef6
+  "@mobilizehub/payload-plugin/client#EmailPreviewField": EmailPreviewField_ddfb106744f74e4f8b6aa32b3176cef6,
+  "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a
 }
