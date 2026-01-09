@@ -1,5 +1,12 @@
 # @mobilizehub/payload-plugin
 
+## 0.5.1
+
+### Patch Changes
+
+- 6e865c2: Improve contact fields filterOptions to use Set for better duplicate detection and add validation ensuring email field is required
+- 055aec0: Update Payload dependencies to v3.70.0
+
 ## 0.5.0
 
 ### Minor Changes
