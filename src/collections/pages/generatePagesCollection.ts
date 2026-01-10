@@ -8,6 +8,8 @@ import { createSlugField } from '../../fields/slug.js'
 import { createStatusField } from '../../fields/status.js'
 
 export const generatePagesCollection = (pagesConfig: MobilizehubPluginConfig) => {
+  const { blocks: blocksOverride, ...pagesOverrides } = pagesConfig.pagesOverrides || {}
+
   const defaultBlocks: Block[] = [
     {
       slug: 'content',
@@ -22,9 +24,7 @@ export const generatePagesCollection = (pagesConfig: MobilizehubPluginConfig) =>
     },
   ]
 
-  const blocks = pagesConfig.pagesOverrides?.blocks
-    ? pagesConfig.pagesOverrides.blocks({ defaultBlocks })
-    : defaultBlocks
+  const blocks = blocksOverride ? blocksOverride({ defaultBlocks }) : defaultBlocks
 
   const defaultFields: Field[] = [
     createStatusField(),
@@ -51,28 +51,21 @@ export const generatePagesCollection = (pagesConfig: MobilizehubPluginConfig) =>
   ]
 
   const config: CollectionConfig = {
-    ...(pagesConfig.pagesOverrides || {}),
-    slug: pagesConfig.pagesOverrides?.slug || 'pages',
+    ...pagesOverrides,
+    slug: pagesOverrides.slug || 'pages',
     access: {
       read: () => true,
-      ...(pagesConfig.pagesOverrides?.access || {}),
+      ...(pagesOverrides.access || {}),
     },
     admin: {
-      ...(pagesConfig.pagesOverrides?.admin || {}),
-      defaultColumns: pagesConfig.pagesOverrides?.admin?.defaultColumns || [
-        'id',
-        'name',
-        'slug',
-        'status',
-      ],
-      hidden: pagesConfig.pagesOverrides?.admin?.hidden || false,
-      useAsTitle: pagesConfig.pagesOverrides?.admin?.useAsTitle || 'name',
+      ...(pagesOverrides.admin || {}),
+      defaultColumns: pagesOverrides.admin?.defaultColumns || ['id', 'name', 'slug', 'status'],
+      hidden: pagesOverrides.admin?.hidden || false,
+      useAsTitle: pagesOverrides.admin?.useAsTitle || 'name',
     },
-    fields: pagesConfig.pagesOverrides?.fields
-      ? pagesConfig.pagesOverrides.fields({ defaultFields })
-      : defaultFields,
+    fields: pagesOverrides.fields ? pagesOverrides.fields({ defaultFields }) : defaultFields,
     hooks: {
-      ...(pagesConfig.pagesOverrides?.hooks || {}),
+      ...(pagesOverrides.hooks || {}),
     },
   }
 
