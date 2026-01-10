@@ -1,5 +1,11 @@
 # @mobilizehub/payload-plugin
 
+## 0.5.3
+
+### Patch Changes
+
+- 7f7e4a4: Fix pages blocks override being incorrectly spread into collection config
+
 ## 0.5.2
 
 ### Patch Changes
