@@ -198,7 +198,7 @@ export const generateFormsCollection = (formsConfig: MobilizehubPluginConfig) =>
   ]
 
   const config: CollectionConfig = {
-    ...(formsConfig.formsOverrides = {}),
+    ...(formsConfig.formsOverrides || {}),
     slug: formsConfig.formsOverrides?.slug || 'forms',
     access: {
       read: () => true,

@@ -43,7 +43,7 @@ export const generateFormSubmissionsCollection = (
   ]
 
   const config: CollectionConfig = {
-    ...(formSubmissionsConfig.formSubmissionsOverrides = {}),
+    ...(formSubmissionsConfig.formSubmissionsOverrides || {}),
     slug: formSubmissionsConfig.formSubmissionsOverrides?.slug || 'formSubmissions',
     access: {
       create: () => false,
