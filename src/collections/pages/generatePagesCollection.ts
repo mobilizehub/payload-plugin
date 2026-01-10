@@ -51,6 +51,7 @@ export const generatePagesCollection = (pagesConfig: MobilizehubPluginConfig) =>
   ]
 
   const config: CollectionConfig = {
+    ...(pagesConfig.pagesOverrides || {}),
     slug: pagesConfig.pagesOverrides?.slug || 'pages',
     access: {
       read: () => true,
@@ -73,7 +74,6 @@ export const generatePagesCollection = (pagesConfig: MobilizehubPluginConfig) =>
     hooks: {
       ...(pagesConfig.pagesOverrides?.hooks || {}),
     },
-    ...(pagesConfig.pagesOverrides = {}),
   }
 
   return config
