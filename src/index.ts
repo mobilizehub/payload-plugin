@@ -11,6 +11,7 @@ import { generatePagesCollection } from './collections/pages/generatePagesCollec
 import { generateTagsCollection } from './collections/tags/generateTagsCollection.js'
 import { generateUnsubscribeTokensCollection } from './collections/unsubscribe-tokens/generateUnsubscribeTokens.js'
 import { emailWebhookHandler } from './endpoints/emailWebhookHandler.js'
+import { formSubmissionHandler } from './endpoints/formSubmissionHandler.js'
 import { sendBroadcastHandler } from './endpoints/sendBroadcastHandler.js'
 import { sendTestEmailHandler } from './endpoints/sendTestBroadcastHandler.js'
 import { unsubscribeHandler } from './endpoints/unsubscribeHandler.js'
@@ -65,6 +66,11 @@ export const mobilizehubPlugin =
         handler: emailWebhookHandler(pluginOptions),
         method: 'post',
         path: '/webhooks/email',
+      },
+      {
+        handler: formSubmissionHandler(pluginOptions),
+        method: 'post',
+        path: '/forms.createSubmission',
       },
     ]
 

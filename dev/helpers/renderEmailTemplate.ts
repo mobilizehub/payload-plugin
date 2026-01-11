@@ -1,4 +1,6 @@
-export const renderEmailTemplate = (args: any) => {
+import type { EmailMessage } from '@mobilizehub/payload-plugin'
+
+export const renderEmailTemplate = (args: EmailMessage) => {
   return `
 <!DOCTYPE html>
 <html lang="en">
