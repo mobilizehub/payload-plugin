@@ -3,6 +3,8 @@ import type { CollectionConfig, Field } from 'payload'
 import type { MobilizehubPluginConfig } from '../../types/index.js'
 
 import { authenticated } from '../../access/authenticated.js'
+import { createProcessFormSubmissionHook } from './hooks/processFormSubmission.js'
+import { createSendAutoresponseHook } from './hooks/sendAutoresponse.js'
 
 export const generateFormSubmissionsCollection = (
   formSubmissionsConfig: MobilizehubPluginConfig,
@@ -60,7 +62,14 @@ export const generateFormSubmissionsCollection = (
       : defaultFields,
     hooks: {
       ...(formSubmissionsConfig.formSubmissionsOverrides?.hooks || {}),
-      afterChange: [...(formSubmissionsConfig.formSubmissionsOverrides?.hooks?.afterChange || [])],
+      afterChange: [
+        createSendAutoresponseHook(formSubmissionsConfig),
+        ...(formSubmissionsConfig.formSubmissionsOverrides?.hooks?.afterChange || []),
+      ],
+      beforeChange: [
+        createProcessFormSubmissionHook(formSubmissionsConfig),
+        ...(formSubmissionsConfig.formSubmissionsOverrides?.hooks?.beforeChange || []),
+      ],
     },
   }
 
