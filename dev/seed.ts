@@ -1,5 +1,6 @@
 import type { Payload } from 'payload'
 
+import { CONSTS } from './consts.js'
 import { createTestContacts } from './helpers/createTestContacts.js'
 import { devUser } from './helpers/credentials.js'
 
@@ -79,8 +80,8 @@ async function seedBroadcast(payload: Payload) {
             version: 1,
           },
         },
-        fromAddress: 'dev@payloadcms.com',
-        fromName: 'Dev',
+        fromAddress: CONSTS.defaultFromAddress,
+        fromName: CONSTS.defaultFromName,
         previewText: null,
         replyTo: null,
         status: 'draft',
