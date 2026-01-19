@@ -1,5 +1,11 @@
 # @mobilizehub/payload-plugin
 
+## 0.6.1
+
+### Patch Changes
+
+- 30c599b: Fix Resend email adapter idempotency key header handling
+
 ## 0.6.0
 
 ### Minor Changes
