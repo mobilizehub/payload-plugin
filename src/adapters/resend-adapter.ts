@@ -261,7 +261,7 @@ async function handleWebhookEvent(
  * ```
  */
 export const resendAdapter = (opts: ResendAdapterOptions): EmailAdapter => {
-  return () => ({
+  return ({ payload }) => ({
     name: 'resend-mobilizehub-adapter',
     defaultFromAddress: opts.defaultFromAddress,
     defaultFromName: opts.defaultFromName,
@@ -271,12 +271,16 @@ export const resendAdapter = (opts: ResendAdapterOptions): EmailAdapter => {
       const fromAddress =
         message.from || formatFromAddress(opts.defaultFromName, opts.defaultFromAddress)
 
-      return sendResendEmail(opts.apiKey, {
-        from: fromAddress,
-        html: message.html,
-        subject: message.subject,
-        to: message.to,
-      })
+      return sendResendEmail(
+        opts.apiKey,
+        {
+          from: fromAddress,
+          html: message.html,
+          subject: message.subject,
+          to: message.to,
+        },
+        message.idempotencyKey,
+      )
     },
 
     webhookHandler: async (req) => {

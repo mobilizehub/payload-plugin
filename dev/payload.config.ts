@@ -1,4 +1,3 @@
-import { mobilizehubPlugin } from '@mobilizehub/payload-plugin'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
@@ -6,8 +5,8 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
-import { renderEmailTemplate } from './helpers/renderEmailTemplate.js'
 import { testEmailAdapter } from './helpers/testEmailAdapter.js'
+import { mobilizehub } from './mobilizhub.config.js'
 import { seed } from './seed.js'
 
 const filename = fileURLToPath(import.meta.url)
@@ -56,42 +55,7 @@ const buildConfigWithMemoryDB = async () => {
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [
-      mobilizehubPlugin({
-        broadcastConfig: {
-          batchSize: 10,
-          taskSchedule: '* * * * *', // every minute
-        },
-        email: () => {
-          return {
-            name: 'test-email-adapter',
-            defaultFromAddress: 'dev@payloadcms.com',
-            defaultFromName: 'Dev',
-            render: renderEmailTemplate,
-            sendEmail: async (opts) => {
-              console.log('Sending email with test-email-adapter', opts)
-              return Promise.resolve()
-            },
-          }
-        },
-        pagesOverrides: {
-          blocks: ({ defaultBlocks }) => [
-            ...defaultBlocks,
-            {
-              slug: 'hero',
-              fields: [
-                {
-                  name: 'headline',
-                  type: 'text',
-                  label: 'Headline',
-                },
-              ],
-              interfaceName: 'HeroBlock',
-            },
-          ],
-        },
-      }),
-    ],
+    plugins: [mobilizehub],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {

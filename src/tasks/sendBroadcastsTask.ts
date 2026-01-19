@@ -99,8 +99,6 @@ export const createSendBroadcastsTask = (pluginConfig: MobilizehubPluginConfig):
       const { payload } = req
       const logger = payload.logger
 
-      logger.info('Send Broadcast task handler called')
-
       const { docs } = await payload.find({
         collection: 'broadcasts',
         limit: 1,

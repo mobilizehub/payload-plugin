@@ -100,7 +100,9 @@ export const sendBroadcastHandler = (): PayloadHandler => {
       }
 
       if (broadcast.status !== 'draft') {
-        logger.error(`Broadcast ${broadcastId} is not in draft status (current: ${broadcast.status})`)
+        logger.error(
+          `Broadcast ${broadcastId} is not in draft status (current: ${broadcast.status})`,
+        )
         return errorResponse(
           ErrorCodes.VALIDATION_ERROR,
           'Broadcast must be in draft status to send',
@@ -121,6 +123,7 @@ export const sendBroadcastHandler = (): PayloadHandler => {
         data: {
           meta: {
             contactsCount: contactsCount.totalDocs,
+            lastProcessedContactId: 0,
             processedCount: 0,
           },
           status: 'sending',
