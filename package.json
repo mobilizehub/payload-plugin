@@ -30,6 +30,11 @@
       "import": "./src/adapters/index.ts",
       "types": "./src/adapters/index.ts",
       "default": "./src/adapters/index.ts"
+    },
+    "./helpers": {
+      "import": "./src/helpers/index.ts",
+      "types": "./src/helpers/index.ts",
+      "default": "./src/helpers/index.ts"
     }
   },
   "main": "./src/index.ts",
@@ -127,6 +132,11 @@
         "import": "./dist/adapters/index.js",
         "types": "./dist/adapters/index.d.ts",
         "default": "./dist/adapters/index.js"
+      },
+      "./helpers": {
+        "import": "./dist/helpers/index.js",
+        "types": "./dist/helpers/index.d.ts",
+        "default": "./dist/helpers/index.js"
       }
     },
     "main": "./dist/index.js",
