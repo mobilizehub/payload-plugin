@@ -43,6 +43,15 @@ async function sendResendEmail(
   message: EmailMessage,
   idempotencyKey?: string,
 ): Promise<{ providerId: string }> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  }
+
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey
+  }
+
   const response = await fetch(RESEND_API_URL, {
     body: JSON.stringify({
       from: message.from,
@@ -50,11 +59,7 @@ async function sendResendEmail(
       subject: message.subject,
       to: message.to,
     }),
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'Idempotency-Key': idempotencyKey || '',
-    },
+    headers,
     method: 'POST',
   })
 
