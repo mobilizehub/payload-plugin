@@ -1,5 +1,11 @@
 # @mobilizehub/payload-plugin
 
+## 0.7.0
+
+### Minor Changes
+
+- cdf8ec7: Add `countries` array export via new `@mobilizehub/payload-plugin/helpers` entry point for use in frontend country select inputs
+
 ## 0.6.2
 
 ### Patch Changes
