@@ -8,10 +8,13 @@ import { generateEmailsCollection } from './collections/emails/generateEmailsCol
 import { generateFormSubmissionsCollection } from './collections/form-submissions/generateFormSubmissionsCollection.js'
 import { generateFormsCollection } from './collections/forms/generateFormsCollection.js'
 import { generatePagesCollection } from './collections/pages/generatePagesCollection.js'
+import { generatePetitionSignaturesCollection } from './collections/petition-signatures/generatePetitionSignaturesCollection.js'
+import { generatePetitionsCollection } from './collections/petitions/generatePetitionsCollection.js'
 import { generateTagsCollection } from './collections/tags/generateTagsCollection.js'
 import { generateUnsubscribeTokensCollection } from './collections/unsubscribe-tokens/generateUnsubscribeTokens.js'
 import { emailWebhookHandler } from './endpoints/emailWebhookHandler.js'
 import { formSubmissionHandler } from './endpoints/formSubmissionHandler.js'
+import { petitionSignatureHandler } from './endpoints/petitionSignatureHandler.js'
 import { sendBroadcastHandler } from './endpoints/sendBroadcastHandler.js'
 import { sendTestEmailHandler } from './endpoints/sendTestBroadcastHandler.js'
 import { unsubscribeHandler } from './endpoints/unsubscribeHandler.js'
@@ -36,6 +39,8 @@ export const mobilizehubPlugin =
       generateUnsubscribeTokensCollection(),
       generateFormSubmissionsCollection(pluginOptions),
       generateFormsCollection(pluginOptions),
+      generatePetitionSignaturesCollection(pluginOptions),
+      generatePetitionsCollection(pluginOptions),
     )
 
     if (pluginOptions.disabled) {
@@ -71,6 +76,11 @@ export const mobilizehubPlugin =
         handler: formSubmissionHandler(pluginOptions),
         method: 'post',
         path: '/forms.createSubmission',
+      },
+      {
+        handler: petitionSignatureHandler(pluginOptions),
+        method: 'post',
+        path: '/petitions.createSignature',
       },
     ]
 
