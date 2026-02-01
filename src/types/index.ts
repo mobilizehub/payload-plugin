@@ -167,6 +167,14 @@ export type MobilizehubPluginConfig = {
    */
   pagesOverrides?: { blocks?: BlocksOverride } & CollectionOverride
   /**
+   * Overrides for the petition signatures collection
+   */
+  petitionSignaturesOverrides?: CollectionOverride
+  /**
+   * Overrides for the petitions collection
+   */
+  petitionsOverrides?: CollectionOverride
+  /**
    * Overrides for the tags collection
    */
   tagsOverrides?: CollectionOverride
