@@ -35,6 +35,11 @@
       "import": "./src/helpers/index.ts",
       "types": "./src/helpers/index.ts",
       "default": "./src/helpers/index.ts"
+    },
+    "./fields": {
+      "import": "./src/exports/fields.ts",
+      "types": "./src/exports/fields.ts",
+      "default": "./src/exports/fields.ts"
     }
   },
   "main": "./src/index.ts",
@@ -137,6 +142,11 @@
         "import": "./dist/helpers/index.js",
         "types": "./dist/helpers/index.d.ts",
         "default": "./dist/helpers/index.js"
+      },
+      "./fields": {
+        "import": "./dist/exports/fields.js",
+        "types": "./dist/exports/fields.d.ts",
+        "default": "./dist/exports/fields.js"
       }
     },
     "main": "./dist/index.js",
