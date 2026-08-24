@@ -108,6 +108,10 @@ export type EmailAdapter = ({ payload }: { payload: BasePayload }) => {
 
 export type MobilizehubPluginConfig = {
   /**
+   * Overrides for the authors collection
+   */
+  authorsOverrides?: CollectionOverride
+  /**
    * Broadcasts task configuration
    */
   broadcastConfig?: {
@@ -174,6 +178,10 @@ export type MobilizehubPluginConfig = {
    * Overrides for the petitions collection
    */
   petitionsOverrides?: CollectionOverride
+  /**
+   * Overrides for the posts collection
+   */
+  postsOverrides?: CollectionOverride
   /**
    * Overrides for the tags collection
    */

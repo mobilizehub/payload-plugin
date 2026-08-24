@@ -2,6 +2,7 @@ import type { Config, Endpoint, TaskConfig } from 'payload'
 
 import type { MobilizehubPluginConfig } from './types/index.js'
 
+import { generateAuthorsCollection } from './collections/authors/generateAuthorsCollection.js'
 import { generateBroadcastsCollection } from './collections/broadcasts/generateBroadcastsCollection.js'
 import { generateContactsCollection } from './collections/contacts/generateContactsCollection.js'
 import { generateEmailsCollection } from './collections/emails/generateEmailsCollection.js'
@@ -10,6 +11,7 @@ import { generateFormsCollection } from './collections/forms/generateFormsCollec
 import { generatePagesCollection } from './collections/pages/generatePagesCollection.js'
 import { generatePetitionSignaturesCollection } from './collections/petition-signatures/generatePetitionSignaturesCollection.js'
 import { generatePetitionsCollection } from './collections/petitions/generatePetitionsCollection.js'
+import { generatePostsCollection } from './collections/posts/generatePostsCollection.js'
 import { generateTagsCollection } from './collections/tags/generateTagsCollection.js'
 import { generateUnsubscribeTokensCollection } from './collections/unsubscribe-tokens/generateUnsubscribeTokens.js'
 import { emailWebhookHandler } from './endpoints/emailWebhookHandler.js'
@@ -41,6 +43,8 @@ export const mobilizehubPlugin =
       generateFormsCollection(pluginOptions),
       generatePetitionSignaturesCollection(pluginOptions),
       generatePetitionsCollection(pluginOptions),
+      generateAuthorsCollection(pluginOptions),
+      generatePostsCollection(pluginOptions),
     )
 
     if (pluginOptions.disabled) {

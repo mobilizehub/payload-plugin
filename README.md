@@ -17,6 +17,7 @@ A comprehensive email advocacy and contact management plugin for [Payload CMS](h
 - Secure unsubscribe tokens with HMAC-SHA256 signing
 - Pluggable email adapter system with built-in Resend support
 - Customizable pages collection with content blocks
+- Posts collection for publishing rich text articles and updates, with a shared authors collection
 
 ## Installation
 
