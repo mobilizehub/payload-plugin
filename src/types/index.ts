@@ -1,12 +1,10 @@
-import type { BasePayload, Block, CollectionConfig, Field, PayloadRequest } from 'payload'
+import type { BasePayload, CollectionConfig, Field, PayloadRequest } from 'payload'
 
 export type FieldsOverride = (args: { defaultFields: Field[] }) => Field[]
 
 export type CollectionOverride = { fields?: FieldsOverride } & Partial<
   Omit<CollectionConfig, 'fields'>
 >
-
-export type BlocksOverride = (args: { defaultBlocks: Block[] }) => Block[]
 
 /**
  * Contact type
@@ -108,10 +106,6 @@ export type EmailAdapter = ({ payload }: { payload: BasePayload }) => {
 
 export type MobilizehubPluginConfig = {
   /**
-   * Overrides for the authors collection
-   */
-  authorsOverrides?: CollectionOverride
-  /**
    * Broadcasts task configuration
    */
   broadcastConfig?: {
@@ -167,10 +161,6 @@ export type MobilizehubPluginConfig = {
    */
   formSubmissionsOverrides?: CollectionOverride
   /**
-   * Overrides for the pages collection
-   */
-  pagesOverrides?: { blocks?: BlocksOverride } & CollectionOverride
-  /**
    * Overrides for the petition signatures collection
    */
   petitionSignaturesOverrides?: CollectionOverride
@@ -178,10 +168,6 @@ export type MobilizehubPluginConfig = {
    * Overrides for the petitions collection
    */
   petitionsOverrides?: CollectionOverride
-  /**
-   * Overrides for the posts collection
-   */
-  postsOverrides?: CollectionOverride
   /**
    * Overrides for the tags collection
    */

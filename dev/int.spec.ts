@@ -23,47 +23,29 @@ beforeAll(async () => {
 describe('Plugin integration tests', () => {
   it.todo('should add integration tests')
 
-  describe('posts collection', () => {
-    it('is registered by the plugin', () => {
+  describe('createContentCollection utility', () => {
+    it('registers a pages collection created with createContentCollection', () => {
       const slugs = config.collections.map((collection) => collection.slug)
 
-      expect(slugs).toContain('posts')
-      expect(slugs).toContain('authors')
+      expect(slugs).toContain('pages')
+      expect(slugs).not.toContain('posts')
+      expect(slugs).not.toContain('authors')
     })
 
-    it('creates posts that share the same author', async () => {
-      const author = await payload.create({
-        collection: 'authors',
+    it('creates a page with name, slug, and status fields', async () => {
+      const page = await payload.create({
+        collection: 'pages',
         data: {
-          name: 'Jane Doe',
-        },
-      })
-
-      const post = await payload.create({
-        collection: 'posts',
-        data: {
-          name: 'Our First Campaign Update',
-          slug: 'our-first-campaign-update',
-          author: author.id,
-          headline: 'Our first campaign update',
+          name: 'Home',
+          slug: 'home',
+          blocks: [],
           status: 'published',
         },
       })
 
-      const secondPost = await payload.create({
-        collection: 'posts',
-        data: {
-          name: 'Our Second Campaign Update',
-          slug: 'our-second-campaign-update',
-          author: author.id,
-          status: 'draft',
-        },
-      })
-
-      expect(post.slug).toBe('our-first-campaign-update')
-      expect(post.status).toBe('published')
-      expect(post.author).toMatchObject({ id: author.id, name: 'Jane Doe' })
-      expect(secondPost.author).toMatchObject({ id: author.id, name: 'Jane Doe' })
+      expect(page.name).toBe('Home')
+      expect(page.slug).toBe('home')
+      expect(page.status).toBe('published')
     })
   })
 })

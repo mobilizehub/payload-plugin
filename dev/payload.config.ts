@@ -2,6 +2,7 @@ import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
+import { createContentCollection } from 'payload-plugin/collections'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -31,6 +32,28 @@ const buildConfigWithMemoryDB = async () => {
           staticDir: path.resolve(dirname, 'media'),
         },
       },
+      createContentCollection({
+        slug: 'pages',
+        contentFields: [
+          {
+            name: 'blocks',
+            type: 'blocks',
+            blocks: [
+              {
+                slug: 'content',
+                fields: [{ name: 'richText', type: 'richText', label: false }],
+                interfaceName: 'ContentBlock',
+              },
+              {
+                slug: 'hero',
+                fields: [{ name: 'headline', type: 'text', label: 'Headline' }],
+                interfaceName: 'HeroBlock',
+              },
+            ],
+            label: 'Blocks',
+          },
+        ],
+      }),
     ],
     db: sqliteAdapter({
       client: {

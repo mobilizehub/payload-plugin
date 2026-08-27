@@ -128,7 +128,7 @@ export const generatePetitionsCollection = (petitionsConfig: MobilizehubPluginCo
               },
               label: 'Document to link to',
               maxDepth: 2,
-              relationTo: ['pages', 'petitions'],
+              relationTo: ['petitions'],
               required: true,
             },
             {

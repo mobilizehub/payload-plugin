@@ -102,7 +102,7 @@ export const generateFormsCollection = (formsConfig: MobilizehubPluginConfig) =>
               },
               label: 'Document to link to',
               maxDepth: 2,
-              relationTo: ['pages', 'forms'],
+              relationTo: ['forms'],
               required: true,
             },
             {

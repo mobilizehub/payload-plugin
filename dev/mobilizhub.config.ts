@@ -20,20 +20,4 @@ export const mobilizehub = mobilizehubPlugin({
       },
     }
   },
-  pagesOverrides: {
-    blocks: ({ defaultBlocks }) => [
-      ...defaultBlocks,
-      {
-        slug: 'hero',
-        fields: [
-          {
-            name: 'headline',
-            type: 'text',
-            label: 'Headline',
-          },
-        ],
-        interfaceName: 'HeroBlock',
-      },
-    ],
-  },
 })
