@@ -40,6 +40,11 @@
       "import": "./src/exports/fields.ts",
       "types": "./src/exports/fields.ts",
       "default": "./src/exports/fields.ts"
+    },
+    "./collections": {
+      "import": "./src/exports/collections.ts",
+      "types": "./src/exports/collections.ts",
+      "default": "./src/exports/collections.ts"
     }
   },
   "main": "./src/index.ts",
@@ -147,6 +152,11 @@
         "import": "./dist/exports/fields.js",
         "types": "./dist/exports/fields.d.ts",
         "default": "./dist/exports/fields.js"
+      },
+      "./collections": {
+        "import": "./dist/exports/collections.js",
+        "types": "./dist/exports/collections.d.ts",
+        "default": "./dist/exports/collections.js"
       }
     },
     "main": "./dist/index.js",
