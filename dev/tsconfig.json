@@ -17,8 +17,10 @@
     "paths": {
       "@payload-config": ["./payload.config.ts"],
       "payload-plugin": ["../src/index.ts"],
+      "payload-plugin/adapters": ["../src/adapters/index.ts"],
       "payload-plugin/client": ["../src/exports/client.ts"],
       "payload-plugin/collections": ["../src/exports/collections.ts"],
+      "payload-plugin/react": ["../src/react/index.ts"],
       "payload-plugin/rsc": ["../src/exports/rsc.ts"]
     },
     "noEmit": true,

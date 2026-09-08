@@ -57,7 +57,9 @@ const buildConfigWithMemoryDB = async () => {
     ],
     db: sqliteAdapter({
       client: {
-        url: 'file:./payload.db',
+        // Set DATABASE_URI to point tests at their own file, so a test run cannot
+        // clobber the database a running dev server has open.
+        url: process.env.DATABASE_URI || 'file:./payload.db',
       },
     }),
     debug: true,

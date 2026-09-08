@@ -1,3 +1,5 @@
+const DEFAULT_DOMAIN="mobilizehub.com"
+
 export function createTestContacts(): Array<{
   email: string
   firstName: string
@@ -5,34 +7,9 @@ export function createTestContacts(): Array<{
 }> {
   const people = [
     {
-      email: 'leslie.alexander@example.com',
+      email: `leslie.alexander@${DEFAULT_DOMAIN}`,
       firstName: 'Leslie',
       lastName: 'Alexander',
-    },
-    {
-      email: 'michael.foster@example.com',
-      firstName: 'Michael',
-      lastName: 'Foster',
-    },
-    {
-      email: 'dries.vincent@example.com',
-      firstName: 'Dries',
-      lastName: 'Vincent',
-    },
-    {
-      email: 'lindsay.walton@example.com',
-      firstName: 'Lindsay',
-      lastName: 'Walton',
-    },
-    {
-      email: 'courtney.henry@example.com',
-      firstName: 'Courtney',
-      lastName: 'Henry',
-    },
-    {
-      email: 'tom.cook@example.com',
-      firstName: 'Tom',
-      lastName: 'Cook',
     },
   ]
 

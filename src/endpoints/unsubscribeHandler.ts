@@ -39,6 +39,9 @@ function isTokenExpired(expiresAt: string): boolean {
 /**
  * Fetches an unsubscribe token record by ID.
  * Returns null if the record doesn't exist.
+ *
+ * depth 0 keeps `emailId` a raw ID; at the default depth Payload resolves the
+ * relationship into the full email document, which cannot be used as a lookup ID.
  */
 async function findUnsubscribeRecord(
   payload: Payload,
@@ -48,6 +51,7 @@ async function findUnsubscribeRecord(
     const record = await payload.findByID({
       id: tokenId,
       collection: 'emailUnsubscribeTokens',
+      depth: 0,
     })
     return record as null | UnsubscribeTokenRecord
   } catch {

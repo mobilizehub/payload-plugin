@@ -1,6 +1,11 @@
 import type { EmailMessage } from '@mobilizehub/payload-plugin'
 
+// Emails need an absolute URL, so the unsubscribe link cannot be a relative path.
+const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000'
+
 export const renderEmailTemplate = (args: EmailMessage) => {
+  const unsubscribeUrl = `${SERVER_URL}/unsubscribe?token=${encodeURIComponent(args.token ?? '')}`
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -43,6 +48,7 @@ export const renderEmailTemplate = (args: EmailMessage) => {
     </style>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">${args.previewText ?? ''}</div>
     <table role="presentation" style="width: 100%; border-collapse: collapse;">
         <tr>
             <td align="center" style="padding: 40px 0;">
@@ -54,11 +60,11 @@ export const renderEmailTemplate = (args: EmailMessage) => {
                             </div>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <td style="padding-top: 30px; padding-bottom: 10px; background-color: #f8f8f8; text-align: center;">
                             <p style="margin: 0; color: #999999; font-size: 14px;">
-                                © 2025 Payload. All rights reserved.
+                                © ${new Date().getFullYear()} Mobilizehub. All rights reserved.
                             </p>
                         </td>
                     </tr>

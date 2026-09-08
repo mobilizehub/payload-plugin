@@ -5,7 +5,7 @@ import type { EmailAdapter, SendEmailOptions } from 'payload'
  */
 export const testEmailAdapter: EmailAdapter<void> = ({ payload }) => ({
   name: 'test-email-adapter',
-  defaultFromAddress: 'dev@payloadcms.com',
+  defaultFromAddress: 'dev@mobilizehub.com',
   defaultFromName: 'Payload Test',
   sendEmail: async (message) => {
     const stringifiedTo = getStringifiedToAddress(message)

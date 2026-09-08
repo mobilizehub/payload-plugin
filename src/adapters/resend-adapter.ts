@@ -2,8 +2,9 @@ import type { Payload, PayloadRequest } from 'payload'
 
 import crypto from 'crypto'
 
-import type { EmailActivityType, EmailAdapter, EmailMessage } from '../types/index.js'
+import type { EmailActivityType, EmailAdapter, EmailMessage, WebhookResult } from '../types/index.js'
 
+import { ErrorCodes } from '../utils/api-response.js'
 import { formatFromAddress } from '../utils/email.js'
 
 type ResendAdapterOptions = {
@@ -38,10 +39,29 @@ const WEBHOOK_EVENT_TO_ACTIVITY: Record<string, EmailActivityType> = {
   'email.sent': 'sent',
 }
 
+/**
+ * Error thrown when the provider rejects a send.
+ *
+ * Rate limits (429) and server errors (5xx) are transient, while idempotency-key
+ * rejections (400 `invalid_idempotency_key`, 409 `invalid_idempotent_request`) and
+ * validation failures (422) will fail identically on every retry.
+ */
+export class EmailSendError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly retryable: boolean,
+  ) {
+    super(message)
+    this.name = 'EmailSendError'
+  }
+}
+
 async function sendResendEmail(
   apiKey: string,
   message: EmailMessage,
   idempotencyKey?: string,
+  logger?: Payload['logger'],
 ): Promise<{ providerId: string }> {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
@@ -53,9 +73,13 @@ async function sendResendEmail(
   }
 
   const response = await fetch(RESEND_API_URL, {
+    // Every field here forms the payload Resend hashes against the idempotency key,
+    // so each one must come from a value that is stable across retries.
+    // `JSON.stringify` drops undefined members, so an absent reply_to is omitted.
     body: JSON.stringify({
       from: message.from,
       html: message.html,
+      reply_to: message.replyTo,
       subject: message.subject,
       to: message.to,
     }),
@@ -65,7 +89,23 @@ async function sendResendEmail(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Resend API error: ${response.status} - ${errorText}`)
+    const retryable = response.status === 429 || response.status >= 500
+
+    if (response.status === 409) {
+      // The same key was reused with a different payload. The send path stores both
+      // the key and the rendered HTML, so this means the code is wrong, not the
+      // environment.
+      logger?.error(
+        `Resend rejected idempotency key "${idempotencyKey}" as a conflicting replay ` +
+          `(409): ${errorText}`,
+      )
+    }
+
+    throw new EmailSendError(
+      `Resend API error: ${response.status} - ${errorText}`,
+      response.status,
+      retryable,
+    )
   }
 
   const data = (await response.json()) as { id: string }
@@ -183,14 +223,47 @@ async function findEmailByProviderId(
   return (result.docs[0] as { activity?: unknown[]; id: number | string }) || null
 }
 
+/**
+ * Activity types that can only meaningfully happen once for a given email.
+ *
+ * `opened` and `clicked` are deliberately absent: a recipient can do both
+ * repeatedly, and collapsing them would throw away engagement data.
+ */
+const SINGLE_OCCURRENCE_ACTIVITY = new Set<EmailActivityType>([
+  'bounced',
+  'complained',
+  'delivered',
+  'failed',
+  'received',
+  'sent',
+])
+
+/**
+ * Appends an activity entry, skipping types that are already recorded.
+ *
+ * The send task writes 'sent' itself once the provider accepts the message, so
+ * without this the matching `email.sent` webhook would record it a second time.
+ * It also absorbs webhook redeliveries, which Svix will do on any non-2xx.
+ *
+ * @returns whether the entry was added
+ */
 async function addEmailActivity(
   payload: Payload,
   emailId: number | string,
   currentActivity: undefined | unknown[],
   activityType: EmailActivityType,
-): Promise<void> {
+): Promise<boolean> {
+  const activity = (currentActivity || []) as { type?: string }[]
+
+  if (
+    SINGLE_OCCURRENCE_ACTIVITY.has(activityType) &&
+    activity.some((entry) => entry?.type === activityType)
+  ) {
+    return false
+  }
+
   const updatedActivity = [
-    ...(currentActivity || []),
+    ...activity,
     {
       type: activityType,
       timestamp: new Date().toISOString(),
@@ -204,6 +277,8 @@ async function addEmailActivity(
       activity: updatedActivity,
     },
   })
+
+  return true
 }
 
 async function handleWebhookEvent(
@@ -211,7 +286,7 @@ async function handleWebhookEvent(
   eventType: string,
   emailProviderId: string,
   logger: Payload['logger'],
-): Promise<void> {
+): Promise<undefined | WebhookResult> {
   const activityType = WEBHOOK_EVENT_TO_ACTIVITY[eventType]
 
   if (!activityType) {
@@ -222,11 +297,26 @@ async function handleWebhookEvent(
   const email = await findEmailByProviderId(payload, emailProviderId)
 
   if (!email) {
-    logger.error(`No email record found for provider ID: ${emailProviderId}`)
-    return
+    // The send task writes providerId only after the provider has accepted the
+    // message, so an event can arrive before the row it needs to match against
+    // exists. Asking for redelivery gives that write time to land; without it a
+    // webhook-only event like 'delivered' would be lost for good.
+    logger.warn(
+      `No email record found for provider ID: ${emailProviderId} - requesting redelivery`,
+    )
+    return {
+      code: ErrorCodes.NOT_FOUND,
+      message: `No email record found for provider ID: ${emailProviderId}`,
+      status: 503,
+    }
   }
 
-  await addEmailActivity(payload, email.id, email.activity, activityType)
+  const recorded = await addEmailActivity(payload, email.id, email.activity, activityType)
+
+  if (!recorded) {
+    logger.info(`Email ${activityType} already recorded: ${emailProviderId}`)
+    return
+  }
 
   // Log based on severity
   const warnEvents = ['email.bounced', 'email.complained', 'email.delivery_delayed']
@@ -281,10 +371,12 @@ export const resendAdapter = (opts: ResendAdapterOptions): EmailAdapter => {
         {
           from: fromAddress,
           html: message.html,
+          replyTo: message.replyTo,
           subject: message.subject,
           to: message.to,
         },
         message.idempotencyKey,
+        payload.logger,
       )
     },
 
@@ -302,7 +394,7 @@ export const resendAdapter = (opts: ResendAdapterOptions): EmailAdapter => {
           return
         }
 
-        await handleWebhookEvent(payload, webhookPayload.type, emailProviderId, logger)
+        return await handleWebhookEvent(payload, webhookPayload.type, emailProviderId, logger)
       } catch (error) {
         logger.error(
           `Resend webhook error: ${error instanceof Error ? error.message : 'Unknown error'}`,

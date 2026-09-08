@@ -32,14 +32,26 @@ export const emailWebhookHandler = (
 
       const result = await adapter.webhookHandler(req)
 
+      // Providers redeliver on any non-2xx, so an adapter returning an error
+      // status is asking for another attempt at an event it cannot process yet.
+      if (result && result.status >= 400) {
+        return errorResponse(
+          result.code ?? ErrorCodes.INTERNAL_ERROR,
+          result.message ?? 'Email webhook could not be processed',
+          result.status,
+        )
+      }
+
       logger.info('Email webhook processed successfully')
 
       return successResponse(result?.body ?? { received: true }, result?.status ?? 200)
     } catch (error) {
       logger.error(error as Error, 'Email webhook processing failed')
 
-      // Return 200 to prevent retry storms from providers
-      // Log the error but acknowledge receipt
+      // A thrown error means the event itself is unusable - a bad signature, a
+      // malformed body - and no number of redeliveries will change that, so it
+      // is acknowledged rather than retried. Events that are merely premature
+      // return an error status above instead of throwing.
       return successResponse({ processed: false, received: true }, 200)
     }
   }
