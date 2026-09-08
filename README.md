@@ -28,6 +28,41 @@ yarn add @mobilizehub/payload-plugin
 pnpm add @mobilizehub/payload-plugin
 ```
 
+## Overriding the emails collection
+
+`emailsOverrides.fields` replaces the whole field set, so any override must keep the fields the
+send-email task depends on:
+
+| Field                | Type            | Purpose                                                                                               |
+| -------------------- | --------------- | ----------------------------------------------------------------------------------------------------- |
+| `idempotencyKey`     | `text` (unique) | The key sent to the provider. Generated once per email row so retries replay rather than double-send. |
+| `unsubscribeTokenId` | `text`          | Lets a resumed send rebuild the same unsubscribe token instead of minting a new one.                  |
+| `replyTo`            | `text`          | The broadcast's reply-to, captured at send time so every retry sends an identical payload.            |
+
+The emails collection also declares a unique compound index on `(broadcast, contact)`, which is what
+guarantees one email per contact per broadcast even when two workers race on the same job.
+
+```ts
+mobilizehubPlugin({
+  emailsOverrides: {
+    fields: ({ defaultFields }) => [...defaultFields, myExtraField],
+  },
+})
+```
+
+Extending `defaultFields` is the safe pattern. If you build the list from scratch, copy all three
+fields across verbatim.
+
+### Preview text
+
+`previewText` is not a provider field — it reaches the inbox as a preheader inside the HTML. The
+plugin passes it to your `render` function; emit it there if you want it:
+
+```ts
+render: ({ html, previewText }) =>
+  `<div style="display:none;max-height:0;overflow:hidden">${previewText ?? ''}</div>${html}`
+```
+
 ## Development
 
 ### Setup

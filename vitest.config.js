@@ -10,6 +10,10 @@ const dirname = path.dirname(filename)
 export default defineConfig(() => {
   loadEnv(path.resolve(dirname, './dev'))
 
+  // Integration tests drop and recreate their schema. Keep them off the database a
+  // running dev server has open, whatever dev/.env sets DATABASE_URI to.
+  process.env.DATABASE_URI = 'file:./payload-test.db'
+
   return {
     plugins: [
       tsconfigPaths({

@@ -16,6 +16,24 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
       },
     },
     {
+      name: 'idempotencyKey',
+      type: 'text',
+      admin: {
+        hidden: true,
+        readOnly: true,
+      },
+      index: true,
+      unique: true,
+    },
+    {
+      name: 'unsubscribeTokenId',
+      type: 'text',
+      admin: {
+        hidden: true,
+        readOnly: true,
+      },
+    },
+    {
       name: 'status',
       type: 'select',
       admin: {
@@ -93,6 +111,13 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
       required: true,
     },
     {
+      name: 'replyTo',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
       name: 'activity',
       type: 'array',
       admin: {
@@ -111,6 +136,7 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
             { label: 'Bounced', value: 'bounced' },
             { label: 'Unsubscribed', value: 'unsubscribed' },
             { label: 'Complained', value: 'complained' },
+            { label: 'Failed', value: 'failed' },
           ],
           required: true,
         },
@@ -183,6 +209,15 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
       ],
       ...(emailsConfig.emailsOverrides?.hooks || {}),
     },
+    // Two workers racing on the same job collapse at insert time, rather than
+    // relying on the provider to notice the duplicate.
+    indexes: [
+      {
+        fields: ['broadcast', 'contact'],
+        unique: true,
+      },
+      ...(emailsConfig.emailsOverrides?.indexes || []),
+    ],
   }
 
   return config

@@ -1,4 +1,4 @@
 export const CONSTS = {
-  defaultFromAddress: 'dev@payloadcms.com',
-  defaultFromName: 'Dev',
+  defaultFromAddress: process.env.DEFAULT_FROM_ADDRESS,
+  defaultFromName: process.env.DEFAULT_FROM_NAME,
 }

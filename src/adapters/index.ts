@@ -1,1 +1,1 @@
-export { resendAdapter } from './resend-adapter.js'
+export { EmailSendError, resendAdapter } from './resend-adapter.js'

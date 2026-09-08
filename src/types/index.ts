@@ -85,10 +85,16 @@ export type EmailMessage = {
 }
 
 /**
- * Result of a webhook call
+ * Result of a webhook call.
+ *
+ * A status of 400 or above is returned to the provider as an error response,
+ * which is how an adapter asks for the event to be redelivered. `code` and
+ * `message` populate that response; `body` is only used on success.
  */
 export type WebhookResult = {
   body?: unknown
+  code?: string
+  message?: string
   status: number
 }
 

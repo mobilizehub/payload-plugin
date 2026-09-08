@@ -12,6 +12,8 @@ type Broadcast = {
   fromAddress?: string
   fromName?: string
   id: number | string
+  previewText?: null | string
+  replyTo?: null | string
   subject?: string
 }
 
@@ -134,14 +136,16 @@ async function sendTestEmail(
     html: parsedContent.html,
     markdown: parsedContent.markdown,
     plainText: parsedContent.plainText,
+    previewText: broadcast.previewText ?? undefined,
     subject: broadcast.subject!,
     to: testEmail,
     token: '',
   })
 
-  const emailInput: Pick<EmailMessage, 'from' | 'html' | 'subject' | 'to'> = {
+  const emailInput: Pick<EmailMessage, 'from' | 'html' | 'replyTo' | 'subject' | 'to'> = {
     from: fromAddress,
     html,
+    replyTo: broadcast.replyTo ?? undefined,
     subject: broadcast.subject!,
     to: testEmail,
   }

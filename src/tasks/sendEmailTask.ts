@@ -3,6 +3,7 @@ import type { BasePayload, TaskConfig } from 'payload'
 
 import type { MobilizehubPluginConfig } from '../types/index.js'
 
+import { EmailSendError } from '../adapters/resend-adapter.js'
 import { formatFromAddress } from '../utils/email.js'
 import { parseLexicalContent } from '../utils/lexical.js'
 import { generateUnsubscribeToken } from '../utils/unsubscribe-token.js'
@@ -39,6 +40,30 @@ async function checkEmailExists(
 }
 
 /**
+ * Writes the unsubscribe token record unless it already exists.
+ */
+async function ensureUnsubscribeToken(
+  payload: BasePayload,
+  tokenId: string,
+  emailId: number | string,
+) {
+  const existing = await payload.findByID({
+    id: tokenId,
+    collection: 'emailUnsubscribeTokens',
+    disableErrors: true,
+  })
+
+  if (existing) {
+    return
+  }
+
+  await payload.create({
+    collection: 'emailUnsubscribeTokens',
+    data: { id: tokenId, emailId },
+  })
+}
+
+/**
  * Creates the send-email task configuration.
  *
  * Handles delivery of a single email for one contact within a broadcast.
@@ -55,7 +80,6 @@ export const createSendEmailTask = (pluginConfig: MobilizehubPluginConfig): Task
 
       const { broadcastId, contactId } = input as { broadcastId: number; contactId: number }
 
-      // Skip if already processed (handles job retries)
       const existingEmail = await checkEmailExists(
         payload,
         collections.emails,
@@ -63,9 +87,10 @@ export const createSendEmailTask = (pluginConfig: MobilizehubPluginConfig): Task
         contactId,
       )
 
-      if (existingEmail) {
+      // Anything past 'queued' has already been handed to the provider.
+      if (existingEmail && existingEmail.status !== 'queued') {
         logger.info(
-          `Email already exists for broadcast ${broadcastId}, contact ${contactId} ` +
+          `Email already sent for broadcast ${broadcastId}, contact ${contactId} ` +
             `(email ID: ${existingEmail.id}, status: ${existingEmail.status})`,
         )
         return { output: { success: true } }
@@ -86,54 +111,110 @@ export const createSendEmailTask = (pluginConfig: MobilizehubPluginConfig): Task
       const sender = pluginConfig.email({ payload })
       const fromAddress = formatFromAddress(broadcast.fromName, broadcast.fromAddress)
 
-      const tokenId = crypto.randomUUID()
-      const unsubscribeToken = generateUnsubscribeToken({ tokenId })
-
       const parsedContent = await parseLexicalContent(
         broadcast.content as SerializedEditorState,
         payload.config,
       )
 
-      const html = sender.render({
-        from: fromAddress,
-        html: parsedContent.html,
-        markdown: parsedContent.markdown,
-        plainText: parsedContent.plainText,
-        subject: broadcast.subject,
-        to: contact.email,
-        token: unsubscribeToken,
-      })
+      // The link baked into already-rendered HTML has to keep resolving. The
+      // regenerated token string carries a fresh timestamp, which is fine —
+      // verification only checks the signature and age.
+      const tokenId = existingEmail?.unsubscribeTokenId ?? crypto.randomUUID()
+      const unsubscribeToken = generateUnsubscribeToken({ tokenId })
 
-      const email = await payload.create({
-        collection: collections.emails,
-        data: {
-          broadcast: broadcast.id,
-          contact: contact.id,
+      let email = existingEmail
+
+      if (!email) {
+        // previewText reaches the inbox as a preheader in the rendered HTML; no
+        // provider takes it as a field.
+        const html = sender.render({
           from: fromAddress,
-          html,
-          status: 'queued',
+          html: parsedContent.html,
+          markdown: parsedContent.markdown,
+          plainText: parsedContent.plainText,
+          previewText: broadcast.previewText,
           subject: broadcast.subject,
           to: contact.email,
-        },
-      })
+          token: unsubscribeToken,
+        })
 
-      await payload.create({
-        collection: 'emailUnsubscribeTokens',
-        data: { id: tokenId, emailId: email.id },
-      })
+        try {
+          email = await payload.create({
+            collection: collections.emails,
+            data: {
+              broadcast: broadcast.id,
+              contact: contact.id,
+              from: fromAddress,
+              html,
+              idempotencyKey: crypto.randomUUID(),
+              replyTo: broadcast.replyTo,
+              status: 'queued',
+              subject: broadcast.subject,
+              to: contact.email,
+              unsubscribeTokenId: tokenId,
+            },
+          })
+        } catch (error) {
+          // Another worker won the race on the unique (broadcast, contact) index.
+          const raced = await checkEmailExists(payload, collections.emails, broadcastId, contactId)
+          if (!raced) {
+            throw error
+          }
+          logger.info(`Lost create race for broadcast ${broadcastId}, contact ${contactId}`)
+          return { output: { success: true } }
+        }
 
-      const result = await sender.sendEmail({
-        from: fromAddress,
-        html,
-        idempotencyKey: `broadcast-${broadcastId}-contact-${contactId}`,
-        markdown: parsedContent.markdown,
-        plainText: parsedContent.plainText,
-        previewText: broadcast.previewText,
-        replyTo: broadcast.replyTo,
-        subject: broadcast.subject,
-        to: contact.email,
-        token: unsubscribeToken,
-      })
+        await payload.create({
+          collection: 'emailUnsubscribeTokens',
+          data: { id: tokenId, emailId: email.id },
+        })
+      } else {
+        logger.info(`Resuming queued email ${email.id} for broadcast ${broadcastId}`)
+
+        // The previous attempt may have died between the two creates above, or this
+        // row may predate unsubscribeTokenId entirely.
+        await ensureUnsubscribeToken(payload, tokenId, email.id)
+
+        if (!email.unsubscribeTokenId) {
+          email = await payload.update({
+            id: email.id,
+            collection: collections.emails,
+            data: { unsubscribeTokenId: tokenId },
+          })
+        }
+      }
+
+      // A byte-identical payload under the same key turns a retry into a replay
+      // rather than a 409.
+      let result
+      try {
+        result = await sender.sendEmail({
+          from: email.from,
+          html: email.html,
+          idempotencyKey: email.idempotencyKey ?? undefined,
+          markdown: parsedContent.markdown,
+          plainText: parsedContent.plainText,
+          previewText: broadcast.previewText,
+          replyTo: email.replyTo ?? undefined,
+          subject: email.subject,
+          to: email.to,
+          token: unsubscribeToken,
+        })
+      } catch (error) {
+        if (error instanceof EmailSendError && !error.retryable) {
+          await payload.update({
+            id: email.id,
+            collection: collections.emails,
+            data: {
+              activity: [{ type: 'failed', timestamp: new Date().toISOString() }],
+              status: 'failed',
+            },
+          })
+          logger.error(`Email ${email.id} failed permanently: ${error.message}`)
+          return { output: { success: false } }
+        }
+        throw error
+      }
 
       await payload.update({
         id: email.id,

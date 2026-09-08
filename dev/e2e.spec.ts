@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test'
 
+import { devUser } from './helpers/credentials.js'
+
 // this is an example Playwright e2e test
 test('should render admin panel logo', async ({ page }) => {
   await page.goto('/admin')
 
   // login
-  await page.fill('#field-email', 'dev@payloadcms.com')
-  await page.fill('#field-password', 'test')
+  await page.fill('#field-email', devUser.email)
+  await page.fill('#field-password', devUser.password)
   await page.click('.form-submit button')
 
   // should show dashboard
