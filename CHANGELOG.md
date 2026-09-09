@@ -1,5 +1,13 @@
 # @mobilizehub/payload-plugin
 
+## 0.13.0
+
+### Minor Changes
+
+- 231071b: Allow the email adapter's `render` function to be async. It can now return either a `string` or a
+  `Promise<string>`, so template libraries that render asynchronously (react-email, MJML) can be used
+  without a synchronous wrapper. Existing synchronous `render` implementations are unaffected.
+
 ## 0.12.0
 
 ### Minor Changes
