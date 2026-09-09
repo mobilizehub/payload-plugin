@@ -127,7 +127,7 @@ export const createSendEmailTask = (pluginConfig: MobilizehubPluginConfig): Task
       if (!email) {
         // previewText reaches the inbox as a preheader in the rendered HTML; no
         // provider takes it as a field.
-        const html = sender.render({
+        const html = await sender.render({
           from: fromAddress,
           html: parsedContent.html,
           markdown: parsedContent.markdown,

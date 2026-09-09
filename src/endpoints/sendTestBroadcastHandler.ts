@@ -131,7 +131,7 @@ async function sendTestEmail(
 
   const fromAddress = formatFromAddress(broadcast.fromName!, broadcast.fromAddress!)
 
-  const html = render({
+  const html = await render({
     from: fromAddress,
     html: parsedContent.html,
     markdown: parsedContent.markdown,
