@@ -123,7 +123,7 @@ export const createSendAutoresponseHook = (
       const formattedFromAddress = formatFromAddress(fromName, fromAddress)
 
       // Render through email template
-      const html = render({
+      const html = await render({
         from: formattedFromAddress,
         html: parsedContent.html,
         markdown: parsedContent.markdown,

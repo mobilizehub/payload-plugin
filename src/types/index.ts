@@ -105,7 +105,12 @@ export type EmailAdapter = ({ payload }: { payload: BasePayload }) => {
   defaultFromAddress: string
   defaultFromName: string
   name: string
-  render: (args: EmailMessage) => string
+  /**
+   * Turns a message into the HTML that gets stored and sent. May be async so
+   * templates that render off the main thread (react-email, MJML) can be used
+   * directly.
+   */
+  render: (args: EmailMessage) => Promise<string> | string
   sendEmail: (args: EmailMessage) => Promise<{ providerId: string } | void>
   webhookHandler?: (req: PayloadRequest) => Promise<void | WebhookResult>
 }
