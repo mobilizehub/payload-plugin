@@ -172,6 +172,25 @@ export type MobilizehubPluginConfig = {
    */
   formSubmissionsOverrides?: CollectionOverride
   /**
+   * Letters configuration
+   */
+  letterConfig?: {
+    /**
+     * Maximum length, in characters, of a letter body edited by a contact.
+     * Bodies longer than this are truncated before the submission is stored.
+     * @default 10000
+     */
+    maxBodyLength?: number
+  }
+  /**
+   * Overrides for the letters collection
+   */
+  lettersOverrides?: CollectionOverride
+  /**
+   * Overrides for the letter submissions collection
+   */
+  letterSubmissionsOverrides?: CollectionOverride
+  /**
    * Overrides for the petition signatures collection
    */
   petitionSignaturesOverrides?: CollectionOverride

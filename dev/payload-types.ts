@@ -68,14 +68,18 @@ export interface Config {
   blocks: {};
   collections: {
     media: Media;
+    pages: Page;
     tags: Tag;
     contacts: Contact;
     broadcasts: Broadcast;
     emails: Email;
-    pages: Page;
     emailUnsubscribeTokens: EmailUnsubscribeToken;
     formSubmissions: FormSubmission;
     forms: Form;
+    petitionSignatures: PetitionSignature;
+    petitions: Petition;
+    letterSubmissions: LetterSubmission;
+    letters: Letter;
     'payload-kv': PayloadKv;
     users: User;
     'payload-jobs': PayloadJob;
@@ -93,17 +97,27 @@ export interface Config {
     forms: {
       formSubmissions: 'formSubmissions';
     };
+    petitions: {
+      petitionSignatures: 'petitionSignatures';
+    };
+    letters: {
+      letterSubmissions: 'letterSubmissions';
+    };
   };
   collectionsSelect: {
     media: MediaSelect<false> | MediaSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     contacts: ContactsSelect<false> | ContactsSelect<true>;
     broadcasts: BroadcastsSelect<false> | BroadcastsSelect<true>;
     emails: EmailsSelect<false> | EmailsSelect<true>;
-    pages: PagesSelect<false> | PagesSelect<true>;
     emailUnsubscribeTokens: EmailUnsubscribeTokensSelect<false> | EmailUnsubscribeTokensSelect<true>;
     formSubmissions: FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
+    petitionSignatures: PetitionSignaturesSelect<false> | PetitionSignaturesSelect<true>;
+    petitions: PetitionsSelect<false> | PetitionsSelect<true>;
+    letterSubmissions: LetterSubmissionsSelect<false> | LetterSubmissionsSelect<true>;
+    letters: LettersSelect<false> | LettersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -172,6 +186,54 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  status?: ('draft' | 'published') | null;
+  name: string;
+  slug: string;
+  publishedAt?: string | null;
+  blocks?: (ContentBlock | HeroBlock)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContentBlock".
+ */
+export interface ContentBlock {
+  richText?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  headline?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -617,15 +679,10 @@ export interface Form {
     [k: string]: unknown;
   } | null;
   type?: ('reference' | 'custom') | null;
-  reference?:
-    | ({
-        relationTo: 'pages';
-        value: number | Page;
-      } | null)
-    | ({
-        relationTo: 'forms';
-        value: number | Form;
-      } | null);
+  reference?: {
+    relationTo: 'forms';
+    value: number | Form;
+  } | null;
   url?: string | null;
   /**
    * Tag all contacts submitted via this form with these tags.
@@ -664,54 +721,6 @@ export interface Form {
   };
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages".
- */
-export interface Page {
-  id: number;
-  status?: ('draft' | 'published') | null;
-  name: string;
-  slug: string;
-  publishedAt?: string | null;
-  blocks?: (ContentBlock | HeroBlock)[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ContentBlock".
- */
-export interface ContentBlock {
-  richText?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'content';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock".
- */
-export interface HeroBlock {
-  headline?: string | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -778,13 +787,17 @@ export interface Broadcast {
 export interface Email {
   id: number;
   providerId?: string | null;
+  idempotencyKey?: string | null;
+  unsubscribeTokenId?: string | null;
   status: 'queued' | 'failed' | 'sent' | 'delivered' | 'bounced' | 'unsubscribed' | 'complained';
   broadcast?: (number | null) | Broadcast;
+  letterSubmission?: (number | null) | LetterSubmission;
   contact?: (number | null) | Contact;
   from: string;
+  replyTo?: string | null;
   activity?:
     | {
-        type: 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed' | 'complained';
+        type: 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed' | 'complained' | 'failed';
         timestamp: string;
         id?: string | null;
       }[]
@@ -797,12 +810,453 @@ export interface Email {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letterSubmissions".
+ */
+export interface LetterSubmission {
+  id: number;
+  letter: number | Letter;
+  contact?: (number | null) | Contact;
+  createdAt: string;
+  subject?: string | null;
+  /**
+   * The final letter text that was sent to the target.
+   */
+  body?: string | null;
+  /**
+   * Whether the sender changed the letter template before sending.
+   */
+  edited?: boolean | null;
+  /**
+   * The raw data submitted with the letter.
+   */
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * The delivery record for the letter sent to the target.
+   */
+  email?: (number | null) | Email;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letters".
+ */
+export interface Letter {
+  id: number;
+  status?: ('draft' | 'published') | null;
+  name: string;
+  slug: string;
+  publishedAt?: string | null;
+  headline?: string | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Who or what is this letter addressed to?
+   */
+  target?: string | null;
+  /**
+   * What is the email of the target this letter is addressed to?
+   */
+  email?: string | null;
+  /**
+   * The subject of the letter.
+   */
+  subject?: string | null;
+  /**
+   * The body of the letter.
+   */
+  body?: string | null;
+  /**
+   * The target number of letters for this campaign.
+   */
+  goal?: number | null;
+  legend?: string | null;
+  /**
+   * Configure the fields to be included in the contact form.
+   */
+  contactFields?:
+    | (
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'email';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'emailOptIn';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'firstName';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'lastName';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mobileNumber';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mobileOptIn';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'address';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'city';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'state';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'zip';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'country';
+          }
+      )[]
+    | null;
+  submitButtonLabel?: string | null;
+  /**
+   * Choose whether to display an on-page message or redirect to a different page after they send the letter.
+   */
+  confirmationType?: ('message' | 'redirect') | null;
+  confirmationMessage?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  type?: ('reference' | 'custom') | null;
+  reference?: {
+    relationTo: 'letters';
+    value: number | Letter;
+  } | null;
+  url?: string | null;
+  /**
+   * Tag all contacts who send this letter with these tags.
+   */
+  tags?: (number | Tag)[] | null;
+  autoresponse: {
+    enabled?: boolean | null;
+    fromName: string;
+    /**
+     * The from address is set in the email configuration.
+     */
+    fromAddress: string;
+    replyTo?: string | null;
+    subject?: string | null;
+    previewText?: string | null;
+    content?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  letterSubmissions?: {
+    docs?: (number | LetterSubmission)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "emailUnsubscribeTokens".
  */
 export interface EmailUnsubscribeToken {
   id: string;
   emailId?: (number | null) | Email;
   expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "petitionSignatures".
+ */
+export interface PetitionSignature {
+  id: number;
+  petition: number | Petition;
+  contact?: (number | null) | Contact;
+  createdAt: string;
+  /**
+   * The raw data submitted with the petition signature.
+   */
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "petitions".
+ */
+export interface Petition {
+  id: number;
+  status?: ('draft' | 'published') | null;
+  name: string;
+  slug: string;
+  publishedAt?: string | null;
+  headline?: string | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Who or what is this petition addressed to?
+   */
+  target?: string | null;
+  /**
+   * What is this petition asking for or demanding?
+   */
+  ask?: string | null;
+  /**
+   * The target number of signatures for this petition.
+   */
+  goal?: number | null;
+  legend?: string | null;
+  /**
+   * Configure the fields to be included in the contact form.
+   */
+  contactFields?:
+    | (
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'email';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'emailOptIn';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'firstName';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'lastName';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mobileNumber';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mobileOptIn';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'address';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'city';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'state';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'zip';
+          }
+        | {
+            label?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'country';
+          }
+      )[]
+    | null;
+  submitButtonLabel?: string | null;
+  /**
+   * Choose whether to display an on-page message or redirect to a different page after they sign the petition.
+   */
+  confirmationType?: ('message' | 'redirect') | null;
+  confirmationMessage?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  type?: ('reference' | 'custom') | null;
+  reference?: {
+    relationTo: 'petitions';
+    value: number | Petition;
+  } | null;
+  url?: string | null;
+  /**
+   * Tag all contacts who sign this petition with these tags.
+   */
+  tags?: (number | Tag)[] | null;
+  autoresponse: {
+    enabled?: boolean | null;
+    fromName: string;
+    /**
+     * The from address is set in the email configuration.
+     */
+    fromAddress: string;
+    replyTo?: string | null;
+    subject?: string | null;
+    previewText?: string | null;
+    content?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  petitionSignatures?: {
+    docs?: (number | PetitionSignature)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -960,6 +1414,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
         relationTo: 'tags';
         value: number | Tag;
       } | null)
@@ -976,10 +1434,6 @@ export interface PayloadLockedDocument {
         value: number | Email;
       } | null)
     | ({
-        relationTo: 'pages';
-        value: number | Page;
-      } | null)
-    | ({
         relationTo: 'emailUnsubscribeTokens';
         value: string | EmailUnsubscribeToken;
       } | null)
@@ -990,6 +1444,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'forms';
         value: number | Form;
+      } | null)
+    | ({
+        relationTo: 'petitionSignatures';
+        value: number | PetitionSignature;
+      } | null)
+    | ({
+        relationTo: 'petitions';
+        value: number | Petition;
+      } | null)
+    | ({
+        relationTo: 'letterSubmissions';
+        value: number | LetterSubmission;
+      } | null)
+    | ({
+        relationTo: 'letters';
+        value: number | Letter;
       } | null)
     | ({
         relationTo: 'users';
@@ -1056,6 +1526,42 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  status?: T;
+  name?: T;
+  slug?: T;
+  publishedAt?: T;
+  blocks?:
+    | T
+    | {
+        content?: T | ContentBlockSelect<T>;
+        hero?: T | HeroBlockSelect<T>;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContentBlock_select".
+ */
+export interface ContentBlockSelect<T extends boolean = true> {
+  richText?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  headline?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tags_select".
  */
 export interface TagsSelect<T extends boolean = true> {
@@ -1116,10 +1622,14 @@ export interface BroadcastsSelect<T extends boolean = true> {
  */
 export interface EmailsSelect<T extends boolean = true> {
   providerId?: T;
+  idempotencyKey?: T;
+  unsubscribeTokenId?: T;
   status?: T;
   broadcast?: T;
+  letterSubmission?: T;
   contact?: T;
   from?: T;
+  replyTo?: T;
   activity?:
     | T
     | {
@@ -1132,42 +1642,6 @@ export interface EmailsSelect<T extends boolean = true> {
   html?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages_select".
- */
-export interface PagesSelect<T extends boolean = true> {
-  status?: T;
-  name?: T;
-  slug?: T;
-  publishedAt?: T;
-  blocks?:
-    | T
-    | {
-        content?: T | ContentBlockSelect<T>;
-        hero?: T | HeroBlockSelect<T>;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ContentBlock_select".
- */
-export interface ContentBlockSelect<T extends boolean = true> {
-  richText?: T;
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock_select".
- */
-export interface HeroBlockSelect<T extends boolean = true> {
-  headline?: T;
-  id?: T;
-  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1314,6 +1788,292 @@ export interface FormsSelect<T extends boolean = true> {
         content?: T;
       };
   formSubmissions?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "petitionSignatures_select".
+ */
+export interface PetitionSignaturesSelect<T extends boolean = true> {
+  petition?: T;
+  contact?: T;
+  createdAt?: T;
+  data?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "petitions_select".
+ */
+export interface PetitionsSelect<T extends boolean = true> {
+  status?: T;
+  name?: T;
+  slug?: T;
+  publishedAt?: T;
+  headline?: T;
+  content?: T;
+  target?: T;
+  ask?: T;
+  goal?: T;
+  legend?: T;
+  contactFields?:
+    | T
+    | {
+        email?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        emailOptIn?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        firstName?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        lastName?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        mobileNumber?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        mobileOptIn?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        address?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        city?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        state?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        zip?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        country?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  submitButtonLabel?: T;
+  confirmationType?: T;
+  confirmationMessage?: T;
+  type?: T;
+  reference?: T;
+  url?: T;
+  tags?: T;
+  autoresponse?:
+    | T
+    | {
+        enabled?: T;
+        fromName?: T;
+        fromAddress?: T;
+        replyTo?: T;
+        subject?: T;
+        previewText?: T;
+        content?: T;
+      };
+  petitionSignatures?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letterSubmissions_select".
+ */
+export interface LetterSubmissionsSelect<T extends boolean = true> {
+  letter?: T;
+  contact?: T;
+  createdAt?: T;
+  subject?: T;
+  body?: T;
+  edited?: T;
+  data?: T;
+  email?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letters_select".
+ */
+export interface LettersSelect<T extends boolean = true> {
+  status?: T;
+  name?: T;
+  slug?: T;
+  publishedAt?: T;
+  headline?: T;
+  content?: T;
+  target?: T;
+  email?: T;
+  subject?: T;
+  body?: T;
+  goal?: T;
+  legend?: T;
+  contactFields?:
+    | T
+    | {
+        email?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        emailOptIn?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        firstName?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        lastName?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        mobileNumber?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        mobileOptIn?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        address?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        city?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        state?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        zip?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        country?:
+          | T
+          | {
+              label?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  submitButtonLabel?: T;
+  confirmationType?: T;
+  confirmationMessage?: T;
+  type?: T;
+  reference?: T;
+  url?: T;
+  tags?: T;
+  autoresponse?:
+    | T
+    | {
+        enabled?: T;
+        fromName?: T;
+        fromAddress?: T;
+        replyTo?: T;
+        subject?: T;
+        previewText?: T;
+        content?: T;
+      };
+  letterSubmissions?: T;
   updatedAt?: T;
   createdAt?: T;
 }

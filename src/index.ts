@@ -7,12 +7,15 @@ import { generateContactsCollection } from './collections/contacts/generateConta
 import { generateEmailsCollection } from './collections/emails/generateEmailsCollection.js'
 import { generateFormSubmissionsCollection } from './collections/form-submissions/generateFormSubmissionsCollection.js'
 import { generateFormsCollection } from './collections/forms/generateFormsCollection.js'
+import { generateLetterSubmissionsCollection } from './collections/letter-submissions/generateLetterSubmissionsCollection.js'
+import { generateLettersCollection } from './collections/letters/generateLettersCollection.js'
 import { generatePetitionSignaturesCollection } from './collections/petition-signatures/generatePetitionSignaturesCollection.js'
 import { generatePetitionsCollection } from './collections/petitions/generatePetitionsCollection.js'
 import { generateTagsCollection } from './collections/tags/generateTagsCollection.js'
 import { generateUnsubscribeTokensCollection } from './collections/unsubscribe-tokens/generateUnsubscribeTokens.js'
 import { emailWebhookHandler } from './endpoints/emailWebhookHandler.js'
 import { formSubmissionHandler } from './endpoints/formSubmissionHandler.js'
+import { letterSubmissionHandler } from './endpoints/letterSubmissionHandler.js'
 import { petitionSignatureHandler } from './endpoints/petitionSignatureHandler.js'
 import { sendBroadcastHandler } from './endpoints/sendBroadcastHandler.js'
 import { sendTestEmailHandler } from './endpoints/sendTestBroadcastHandler.js'
@@ -39,6 +42,8 @@ export const mobilizehubPlugin =
       generateFormsCollection(pluginOptions),
       generatePetitionSignaturesCollection(pluginOptions),
       generatePetitionsCollection(pluginOptions),
+      generateLetterSubmissionsCollection(pluginOptions),
+      generateLettersCollection(pluginOptions),
     )
 
     if (pluginOptions.disabled) {
@@ -79,6 +84,11 @@ export const mobilizehubPlugin =
         handler: petitionSignatureHandler(pluginOptions),
         method: 'post',
         path: '/petitions.createSignature',
+      },
+      {
+        handler: letterSubmissionHandler(pluginOptions),
+        method: 'post',
+        path: '/letters.createSubmission',
       },
     ]
 

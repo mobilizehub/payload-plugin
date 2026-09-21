@@ -22,7 +22,6 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
         hidden: true,
         readOnly: true,
       },
-      index: true,
       unique: true,
     },
     {
@@ -81,6 +80,15 @@ export const generateEmailsCollection = (emailsConfig: MobilizehubPluginConfig) 
         readOnly: true,
       },
       relationTo: emailsConfig.broadcastsOverrides?.slug || 'broadcasts',
+    },
+    {
+      name: 'letterSubmission',
+      type: 'relationship',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+      },
+      relationTo: emailsConfig.letterSubmissionsOverrides?.slug || 'letterSubmissions',
     },
     {
       name: 'contact',
