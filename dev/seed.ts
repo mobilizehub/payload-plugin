@@ -93,8 +93,41 @@ async function seedBroadcast(payload: Payload) {
   }
 }
 
+async function seedLetter(payload: Payload) {
+  const { totalDocs } = await payload.count({
+    collection: 'letters',
+  })
+
+  if (!totalDocs) {
+    await payload.create({
+      collection: 'letters',
+      data: {
+        name: 'Letter',
+        slug: 'letter',
+        body:
+          'Dear Joe Smith,\n\n' +
+          'I am writing to ask you to take action.',
+        contactFields: [
+          { blockType: 'email', label: 'Email', required: true },
+          { blockType: 'firstName', label: 'First Name', required: true },
+          { blockType: 'lastName', label: 'Last Name', required: false },
+        ],
+        email: 'joe-smith@example.com',
+        goal: 500,
+        headline: 'Tell Joe Smith to take action',
+        legend: 'Send your letter',
+        status: 'published',
+        subject: 'Please take action',
+        submitButtonLabel: 'Send Letter',
+        target: 'Joe Smith',
+      },
+    })
+  }
+}
+
 export const seed = async (payload: Payload) => {
   await seedUser(payload)
   await seedContact(payload)
   await seedBroadcast(payload)
+  await seedLetter(payload)
 }

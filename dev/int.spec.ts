@@ -6,9 +6,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { EmailMessage, MobilizehubPluginConfig } from '../src/types/index.js'
 
+import { letterSubmissionHandler } from '../src/endpoints/letterSubmissionHandler.js'
 import { unsubscribeHandler } from '../src/endpoints/unsubscribeHandler.js'
 import { createSendEmailTask } from '../src/tasks/sendEmailTask.js'
 import { generateUnsubscribeToken } from '../src/utils/unsubscribe-token.js'
+import { sentEmails } from './helpers/recordingEmailAdapter.js'
 
 let payload: Payload
 let config: SanitizedConfig
@@ -71,18 +73,22 @@ describe('Plugin integration tests', () => {
     })
 
     it('creates a page with name, slug, and status fields', async () => {
+      // The slug is unique and the test database outlives the run, so the slug
+      // has to be new every time.
+      const slug = `home-${Date.now()}`
+
       const page = await payload.create({
         collection: 'pages',
         data: {
           name: 'Home',
-          slug: 'home',
+          slug,
           blocks: [],
           status: 'published',
         },
       })
 
       expect(page.name).toBe('Home')
-      expect(page.slug).toBe('home')
+      expect(page.slug).toBe(slug)
       expect(page.status).toBe('published')
     })
   })
@@ -210,6 +216,97 @@ describe('Plugin integration tests', () => {
       await payload.create({ collection: 'emails', data })
 
       await expect(payload.create({ collection: 'emails', data })).rejects.toThrow()
+    })
+  })
+
+  describe('letter submissions', () => {
+    it('sends the letter to the target and tags the contact', async () => {
+      const suffix = Date.now()
+      const contactEmail = `contact-${suffix}@example.com`
+
+      const tag = await payload.create({
+        collection: 'tags',
+        data: { name: `Letter writers ${suffix}` },
+      })
+
+      const letter = await payload.create({
+        collection: 'letters',
+        data: {
+          name: `Letter ${suffix}`,
+          slug: `letter-${suffix}`,
+          body: 'Dear Joe Smith,\n\nPlease take action.',
+          contactFields: [
+            { blockType: 'email', label: 'Email', required: true },
+            { blockType: 'firstName', label: 'First Name', required: true },
+            { blockType: 'lastName', label: 'Last Name', required: false },
+          ],
+          editable: true,
+          email: `joe-smith-${suffix}@example.com`,
+          status: 'published',
+          subject: 'Please take action',
+          tags: [tag.id],
+          target: 'Joe Smith',
+        },
+      })
+
+      const before = sentEmails.length
+
+      const handler = letterSubmissionHandler({} as MobilizehubPluginConfig)
+      const response = await handler({
+        json: () =>
+          Promise.resolve({
+            body: 'Dear Joe Smith,\n\nPlease take action. I am writing in my own words.',
+            data: { email: contactEmail, firstName: 'Jane', lastName: 'Doe' },
+            letterId: letter.id,
+          }),
+        payload,
+      } as unknown as Parameters<typeof handler>[0])
+
+      expect(response.status).toBe(201)
+
+      const { docs: submissions } = await payload.find({
+        collection: 'letterSubmissions',
+        where: { letter: { equals: letter.id } },
+      })
+
+      expect(submissions).toHaveLength(1)
+      expect(submissions[0].edited).toBe(true)
+      expect(submissions[0].body).toContain('in my own words')
+
+      const { docs: emails } = await payload.find({
+        collection: 'emails',
+        where: { letterSubmission: { equals: submissions[0].id } },
+      })
+
+      expect(emails).toHaveLength(1)
+      expect(emails[0].to).toBe(`joe-smith-${suffix}@example.com`)
+      expect(emails[0].subject).toBe('Please take action')
+      // The contact's address belongs in Reply-To, never in From.
+      expect(emails[0].replyTo).toBe(contactEmail)
+      expect(emails[0].from).not.toContain(contactEmail)
+
+      // The submission holds the delivery record, so bounces are traceable.
+      const linkedEmail = submissions[0].email
+
+      expect(typeof linkedEmail === 'object' ? linkedEmail?.id : linkedEmail).toBe(emails[0].id)
+
+      const sent = sentEmails.slice(before)
+
+      expect(sent).toHaveLength(1)
+      expect(sent[0].to).toBe(`joe-smith-${suffix}@example.com`)
+      expect(sent[0].replyTo).toBe(contactEmail)
+      expect(sent[0].html).toContain('Dear Joe Smith,')
+      expect(sent[0].html).toContain('in my own words')
+      expect(sent[0].html).toContain('Jane Doe')
+
+      const { docs: contacts } = await payload.find({
+        collection: 'contacts',
+        where: { email: { equals: contactEmail } },
+      })
+
+      expect(contacts).toHaveLength(1)
+      expect(contacts[0].firstName).toBe('Jane')
+      expect(contacts[0].tags?.map((t) => (typeof t === 'object' ? t.id : t))).toContain(tag.id)
     })
   })
 
